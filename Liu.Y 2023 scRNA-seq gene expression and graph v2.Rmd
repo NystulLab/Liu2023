@@ -1,0 +1,889 @@
+---
+title: "Liu.Y 2022 scRNA-seq gene exprssion and graph"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+
+```{r load libraries}
+library(Seurat)
+library(patchwork)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(DECENT)
+```
+
+```{r theme for graphs}
+th= (theme_bw()) +
+  theme(text = element_text(family = "Arial", face = "bold"),
+        axis.text.y = element_text(family = "Arial", face = "bold", size = "12", color="black"),
+        axis.text.x = element_text(family = "Arial", face = "bold", size = "12", color="black"),
+        axis.title.y.right = element_text(size = 12),
+        axis.title = element_blank(),
+        plot.title = element_text(
+          family = "Arial", face = "bold", size = "10", color="black", hjust=0.5, vjust = 1),
+        legend.key.size = unit(0.2, "in"),
+        legend.text=element_text(family = "Arial", face = "bold", size = "12", color="black"),
+        legend.title = element_text(family = "Arial", face = "plain", size = "12") 
+  
+        )
+
+```
+
+```{r theme}
+th2=(theme_dark() +
+  theme(panel.grid.major.x = element_line(colour = "white",size=0.25),
+        panel.grid.major.y = element_line(colour = "white",size=0.25),
+    text = element_text(family = "Arial", face = "bold"),
+        axis.text.y = element_text(family = "Arial", face = "bold", size = "12", color="black"),
+        axis.text.x = element_text(family = "Arial", face = "bold", size = "12", color="black"),
+        axis.title.y.right = element_text(size = 12),
+        axis.title = element_blank(),
+        plot.title = element_text(
+          family = "Arial", face = "bold", size = "10", color="black", hjust=0.3, vjust = 1),
+        legend.key.size = unit(0.2, "in"),
+        legend.text=element_text(family = "Arial", face = "bold", size = "12", color="black"),
+        legend.title = element_text(family = "Arial", face = "plain", size = "12")
+        ))
+
+```
+
+```{r generat a Seurat Object for gene exprssion and graph}
+Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure <- Cluster_refined_assigned_allcombined_sctV1NormScale
+saveRDS(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure.rds")
+```
+
+```{r figures_dimplot }
+# Visualization combined
+p1 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", group.by = "dataset", pt.size = 0.02) + th
+p2 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", repel = TRUE, label = "F", pt.size = 0.5, label.size = 4) + th
+p1 + p2
+p3 <- p1 + p2
+
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_forfigure_nolabel.jpg", height = 8, width = 18, plot = p3, quality = 100)
+
+# Visualization splited
+Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure$condition <- factor(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+p4 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", repel = TRUE, label = "T", pt.size = 0.5, label.size = 4, split.by = "condition") & th
+p4
+
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1NormScale_forfigur_dimplotsplited.jpg", height = 8, width = 24, plot = p4, quality = 100)
+```
+
+```{r figures_scatter plot_Pearson correlation}
+filtered_WT_DMSO1 <- subset (x = Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_DMSO1"))
+
+filtered_WT_DMSO2 <- subset (x = Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_DMSO2"))
+
+filtered_WT_EIPA1 <- subset (x = Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_EIPA1"))
+
+filtered_WT_EIPA2 <- subset (x = Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_EIPA2"))
+
+#correlation test for filtred_WT_DMSO1 and filtered_WT_DMSO2
+DMSO1 <- AverageExpression(object = filtered_WT_DMSO1, return.seurat = "F")
+DMSO2 <- AverageExpression(object = filtered_WT_DMSO2, return.seurat = "F")
+x <- DMSO1$RNA
+y <- DMSO2$RNA
+
+pDMSO <- plot (x,y, main= "Pearson correlation", xlab = "WT, -EIPA rep 1", ylab = "WT, -EIPA rep2", pch = 16, cex = 0.5)
+pDMSO
+
+cor.test (x, y, method = "pearson")
+# result from the test above
+#data:  x and y
+#t = 1242.5, df = 296743, p-value < 2.2e-16
+#alternative hypothesis: true correlation is not equal to 0
+#95 percent confidence interval:
+# 0.9152650 0.9164252
+#sample estimates:
+     #cor 
+#0.915847
+
+#correlation test for filtred_WT_EIPA1 and filtered_WT_EIPA2
+EIPA1 <- AverageExpression(object = filtered_WT_EIPA1, return.seurat = "F")
+EIPA2 <- AverageExpression(object = filtered_WT_EIPA2, return.seurat = "F")
+x <- EIPA1$RNA
+y <- EIPA2$RNA
+
+pEIPA <- plot (x,y, main= "Pear    son correlation", xlab = "WT, +EIPA rep 1", ylab = "WT, +EIPA rep2", pch = 16, cex = 0.5)
+pEIPA
+
+cor.test (x, y, method = "pearson")
+# result from the test above
+#data:  x and y
+#t = 1206.6, df = 296743, p-value < 2.2e-16
+#alternative hypothesis: true correlation is not equal to 0
+#95 percent confidence interval:
+# 0.9108141 0.9120324
+#sample estimates:
+#      cor 
+#0.9114252 
+```
+
+```{r figure_doheatmap for entire dataset}
+combined.markers <- FindAllMarkers(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+combined.markers %>%
+    group_by(cluster) %>%
+    top_n(n = 30, wt = avg_log2FC) -> top30
+
+write.csv(combined.markers,"~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/combined_markers.csv" )
+write.csv(top30,"~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/top30.csv" )
+
+pcombined <- DoHeatmap(subset (Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, downsample = 300), features = top30$gene) + theme(axis.text.y = element_text(size = 3))
+pcombined
+
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_sctV1NormScale_forfigure_doheatmap.png", height = 20, width = 20, plot = pcombined) 
+```
+
+```{r figures_dimplot_highlight within all clusters}
+##highlight ISC low proliferative & ISC high proliferative
+cell_names <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "ISC_low_proliferative")
+cell_names2 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "ISC_high_proliferative")
+
+p1 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", group.by = "dataset", pt.size = 0.02) + th
+
+p4 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", repel = TRUE, label = "FALSE", pt.size = 0.5, label.size = 4, cells.highlight = list(cell_names,cell_names2), cols.highlight = c("darksalmon","darkseagreen"), cols = "grey") + th
+
+px <- p1 + p4
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_ISC_forfigure_nolabel.jpg", height = 8, width = 16, plot = px, quality = 100)
+
+##highlight secretory progenitors and other mature secretory cells
+cell_names3 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Secretory_progenitor")
+cell_names4 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Goblet_precursor")
+cell_names5 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Goblet/Paneth_progenitor")
+cell_names6 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "EEC precursor")
+cell_names7 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Goblet/Paneth")
+cell_names8 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "EEC")
+cell_names9 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Tuft")
+
+p1 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", group.by = "dataset", pt.size = 0.02) + th
+
+p5 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", repel = TRUE, label = "FALSE", pt.size = 0.5, label.size = 4, cells.highlight = list(cell_names3,cell_names4,cell_names5,cell_names6,cell_names7,cell_names8,cell_names9), cols.highlight = c("deepskyblue","darkseagreen","chocolate2","#F06292","#00838F","#FDD835","#CE93DB"), cols = "grey") + th
+
+p1 + p5
+py <- p1 + p5
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_allsecretory_forfigure_nolabel_.jpg", height = 8, width = 16, plot = py, quality = 100)
+
+##highlight Clu+ cells
+cell_names <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Clu+")
+
+p1 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", group.by = "dataset", pt.size = 0.02) + th
+
+p4 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", repel = TRUE, label = "FALSE", pt.size = 0.5, label.size = 4, cells.highlight = list(cell_names), cols.highlight = c("darksalmon"), cols = "grey") + th
+
+px <- p1 + p4
+px
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_Clu_forfigure_nolabel.jpg", height = 8, width = 16, plot = px, quality = 100)
+
+##highlight enterocytes
+#re-assign Clu+ back to enterocytes
+Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure <- RenameIdents(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, `Clu+` = "Enterocyte")
+                                                 
+#highlight the entire enterocytes population                                   
+cell_names <- WhichCells(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = "Enterocyte")
+
+p5 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, reduction = "umap", repel = TRUE, label = "FALSE", pt.size = 0.5, label.size = 4, cells.highlight = list(cell_names), cols.highlight = c("#FFCCBC"), cols = "grey") + th
+
+p5
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_all enterocyte_forfigure_nolabel.jpg", height = 8, width = 8, plot = p5, quality = 100)
+```
+
+```{r figures_highlighted featureplot for ISC}
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale$condition <- factor(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+
+cell_names <- WhichCells(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, idents = "ISC_low_proliferative")
+cell_names2 <- WhichCells(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, idents = "ISC_high_proliferative")
+pc <- DimPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, split.by = "condition", reduction = "umap", repel = TRUE, label = "FALSE", pt.size = 0.5, label.size = 4, cells.highlight = list(cell_names,cell_names2), cols.highlight = c("darkseagreen"), cols = "darksalmon") + th
+pc
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_featureplot_ISC_bycondition _forfigure reordered.jpg", height = 7, width = 23, plot = pc, quality = 100)
+```
+
+```{r figures_dotplot for ISC}
+DefaultAssay(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale) <- "RNA"
+pkgd3 <- DotPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, features = c("Olfm4"), group.by = "condition", assay = "RNA", scale = TRUE) + th2 + scale_colour_gradient2(low = "#FAFAFA", mid = "#FF9800", high = "#E65100")
+pkgd3
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_Olfm4(RNA).jpg", height = 3, width = 4, plot = pkgd3, quality = 100)
+
+#compare ISC_low_proliferative
+DefaultAssay(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale) <- "RNA"
+perf <- DotPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, features = c("Lgr5"), group.by = "condition", assay = "RNA", scale = TRUE, idents = c ("ISC_low_proliferative")) + th2 + scale_colour_gradient2(low = "#FAFAFA", mid = "#FF9800", high = "#E65100")
+perf
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_ISClowproliferative_forfigure (RNA)_reordered_dark.jpg", height = 3, width = 4, plot = perf, quality = 100)
+
+#compare ISC_high_proliferative
+DefaultAssay(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale) <- "RNA"
+perd <- DotPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, features = c("Lgr5"), group.by = "condition", assay = "RNA", scale = TRUE, idents = c ("ISC_high_proliferative")) + th2 + scale_colour_gradient2(low = "#FAFAFA", mid = "#FF9800", high = "#E65100")
+perd
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_ISChighproliferative_forfigure (RNA)_reordered_dark.jpg", height = 3, width = 4, plot = perd, quality = 100)
+```
+
+```{r figure_doheatmap for ISC combined dataset_ttest}
+ISC_combined_ttest.markers <- FindAllMarkers(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, test.use="t", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+ISC_combined_ttest.markers %>%
+    group_by(cluster) %>%
+    top_n(n = 30, wt = avg_log2FC) -> top30_ISC_ttest
+pISC_combined_ttest <- DoHeatmap(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, features = top30_ISC_ttest$gene)
+pISC_combined_ttest
+
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/ISCcombined_sctV1NormScale_ttest_doheatmap.png", height = 8, width = 13, plot = pISC_combined_ttest)
+```
+
+```{r figure_doheatmap for ISC combined dataset_wilcox}
+ISC_combined_wilcox.markers <- FindAllMarkers(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, test.use="wilcox", only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+ISC_combined_wilcox.markers %>%
+    group_by(cluster) %>%
+    top_n(n = 30, wt = avg_log2FC) -> top30_ISC_wilcox
+pISC_combined_wilcox <- DoHeatmap(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Scale, features = top30_ISC_ttest$gene)
+pISC_combined_wilcox
+
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/ISCcombined_sctV1NormScale_wilcox_doheatmap.png", height = 8, width = 13, plot = pISC_combined_wilcox)
+```
+
+```{r figures_vlnplot for ISC_low_proliferative vs ISC_high_proliferative}
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale$condition <- factor(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#compare Ki67 between the two ISC populations
+pkji <- VlnPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, features = c('Mki67'), idents = c("ISC_high_proliferative","ISC_low_proliferative"), assay = "RNA", sort = "increasing") & th2
+
+pkji
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_Mki67_Vlnplot(RNA)_reordered.jpg", height = 4, width = 5, plot = pkji, quality = 100)
+```
+
+```{r figures_Vlnplot for enterocytes}
+
+## Dotplot is not a good way to view some of the enterocyte markers
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+ptwv <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, features = c("Aldob"), idents = "Enterocyte", group.by = "condition", assay = "RNA") + th
+ptwv
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_dotplot(RNA)_Absorptive_Aldob.jpg", height = 4, width = 6, plot = ptwv, quality = 100)
+##
+
+#Vlnplot for absorptive markers
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+ptw <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, features = c("Alpi"), idents = "Enterocyte", group.by = "condition", assay = "RNA") + th
+ptw
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_Vlnplot(RNA)_Absorptive_Alpi.jpg", height = 4, width = 6, plot = ptw, quality = 100)
+
+ptl <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, features = c("Aldob"), idents = "Enterocyte", group.by = "condition", assay = "RNA") + th
+ptl
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_Vlnplot(RNA)_Absorptive_Aldob.jpg", height = 4, width = 6, plot = ptl, quality = 100)
+
+ptg <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, features = c("Apoa1"), idents = "Enterocyte", group.by = "condition", assay = "RNA") + th
+ptg
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_Vlnplot(RNA)_Absorptive_Apoa1.jpg", height = 4, width = 6, plot = ptg, quality = 100)
+
+pti <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, features = c("Apoa4"), idents = "Enterocyte", group.by = "condition", assay = "RNA") + th
+pti
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_Vlnplot(RNA)_Absorptive_Apoa4.jpg", height = 4, width = 6, plot = pti, quality = 100)
+
+#Statistical analysis, refer to DECENT analysis for the enterocyte
+
+```
+
+```{r figures_highlighted DimPlot for enterocyte without Clu}
+cell_names <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, idents = "Enterocyte")
+
+px <- DimPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, split.by = "condition", reduction = "umap", repel = TRUE, label = "TRUE", pt.size = 0.5, label.size = 4, cells.highlight = list(cell_names,cell_names), cols.highlight = c("darkseagreen"), cols = "#BDBDBD") & th4
+px
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_featureplot_enterocyteNoClu_bycondition _forfigure.jpg", height = 7, width = 14, plot = px, quality = 100)
+```
+
+```{r figures_highlighted featureplot for enterocyte without Clu}
+#use the featureplot instead of the dimplot for highlighting the enterocyte because will be using the same plot format for Clu+
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+pddd <- FeaturePlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, split.by = "condition", label = F, blend = FALSE, combine = T,cols =     
+    c("#BDBDBD", "#BDBDBD"), pt.size = 0.5, features = "Alpi") & th3
+pddd
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_featureplot_highlighting enterocyte_bycondition_forfigure.jpg", height = 7, width = 16, plot = pddd, quality = 100)
+```
+
+```{r figures_vlnplot for Clu}
+Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale$condition <- factor(Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+
+pxu <- VlnPlot(Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale, features = c("Clu"), group.by = "condition", assay = "RNA") + th
+pxu
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale_Vlnplot(RNA)_Clu.jpg", height = 4, width = 6, plot = pxu, quality = 100)
+
+#Statistical analysis, refer to DECENT analysis for the enterocyte
+
+```
+
+```{r figures_dotplot for Clu}
+Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale$condition <- factor(Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#compare Clu in Clu+ subset, all combined
+DefaultAssay(Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale) <- "RNA"
+pery0 <- DotPlot(Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale, features = c("Clu"), group.by = "condition", assay = "RNA", scale = TRUE) + th2 + scale_colour_gradient2(low = "#FAFAFA", mid = "#FF9800", high = "#E65100")
+pery0
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale_forfigure_dotplot_Clu (RNA)_reordered_combined.jpg", height = 3, width = 4, plot = pery0, quality = 100)
+```
+
+```{r figures_featureplot for Clu in enterocyte}
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+
+pb <- FeaturePlot(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, features = "Clu", split.by = "condition", label = F, blend = FALSE, combine = T,cols =     
+    c("#FFCCBC", "#0277BD"), pt.size = 0.5) & th3
+pb
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sctV1NormScale_UMAP_combined_highlight_featureplot_CluinEnterocyte_bycondition_forfigure reordered.png", height = 7, width = 18, plot = pb)
+```
+
+```{r figures_highlighting secretory cells}
+Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage <- subset(x = Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, idents = c("Secretory_progenitor","Goblet_precursor","Goblet/Paneth_progenitor","EEC precursor","Goblet/Paneth","EEC","Tuft"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, "D:/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage.rds")
+
+cell_names3 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "Secretory_progenitor")
+cell_names4 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "Goblet_precursor")
+cell_names5 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "Goblet/Paneth_progenitor")
+cell_names6 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "EEC precursor")
+cell_names7 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "Goblet/Paneth")
+cell_names8 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "EEC")
+cell_names9 <- WhichCells(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, idents = "Tuft")
+
+Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage$condition, levels = c("WT_DMSO","WT_EIPA","CRISPR_Dox_minus","CRISPR_Dox_plus"), ordered=T)
+
+p5 <- DimPlot(Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage, reduction = "umap", split.by = "condition", repel = TRUE, label = "FALSE", sizes.highlight = 0.002, label.size = 4, cells.highlight = list(cell_names3,cell_names4,cell_names5,cell_names6,cell_names7,cell_names8,cell_names9), cols.highlight = c("darkseagreen","chocolate2","#F06292","#00838F","#FDD835","#CE93DB","deepskyblue"),  cols = "deepskyblue") + th
+p5
+
+ggsave(filename = "D:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1NormScale_forfigure_secretorylineage_highligh.jpg", height = 6, width = 16, plot = p5, quality = 100)
+
+```
+
+```{r figures_dotplot for Secretory progenitor}
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#compare Atoh1, Dll1, spdef1 in the Secretory progenitor subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale) <- "RNA"
+pere <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, features = c("Hes1","Atoh1","Dll1","Spdef"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+pere
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 6, plot = pere, quality = 100)
+
+#compare Abosorptive associated genes in the Secretory progenitor subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale) <- "RNA"
+pere2 <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, features = c("Aldob","Apoa1","Apoa4"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+pere2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_absortpive markers_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 6, plot = pere2, quality = 100)
+
+#Statistical analysis, refer to DECENT analysis for the Secretory progenitor
+
+```
+
+```{r figures_dotplot for Paneth/Goblet progenitor}
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#compare Dll1, spdef1 in the Paneth/Goblet progenitor subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale) <- "RNA"
+peri <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, features = c("Dll1","Spdef"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+peri
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 5, plot = peri, quality = 100)
+
+#compare Abosrptive associated genes in the Paneth/Goblet subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale) <- "RNA"
+peri2 <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, features = c("Aldob","Apoa1","Apoa4"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+peri2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_absortpive markers_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 6, plot = peri2, quality = 100)
+```
+
+```{r figures_dotplot for Goblet precurosr}
+Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#compare Dll1, spdef1 in the Goblet precursor subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale) <- "RNA"
+perx <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale, features = c("Dll1","Spdef"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+perx
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 5, plot = perx, quality = 100)
+
+#compare Abosrptive associated genes in the Goblet precursor subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale) <- "RNA"
+perx2 <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale, features = c("Aldob","Apoa1","Apoa4"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+perx2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_absortpive markers_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 6, plot = perx2, quality = 100)
+```
+
+```{r figures_dotplot for Paneth/Goblet}
+#scale data for comparison
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale.rds")
+
+#reorder
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#compare Abosrptive associated genes in the Goblet/Paneth subset
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale) <- "RNA"
+perk <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale, features = c("Aldob","Apoa1","Apoa4"), group.by = "condition", assay = "RNA", scale = TRUE) & th2 & scale_colour_gradient2(low = "#FAFAFA", mid = "#F57C00", high = "#880E4F")
+perk
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale_Dotplot(RNA)_reordered_dark.jpg", height = 3.5, width = 6, plot = perk, quality = 100)
+```
+
+```{r additional Wnt targets}
+#reorder
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale$condition <- factor(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#comparision
+xxxl <- DotPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, features = c("Klf5","Smoc2","Jun","Ccnd1","Cdx1","Myc","Rnf43","Tfap4","Vegfa","Tbx3","Efnb1","Efnb2","Efnb3"), group.by = "condition", assay = "RNA", scale = TRUE) + th2 + scale_colour_gradient2(low = "#FAFAFA", mid = "#FF9800", high = "#E65100")
+xxxl
+
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_additionalWNT_Dotplot(RNA)_reordered_dark.jpg", height = 2.8, width = 8, plot = xxxl, quality = 100)
+```
+
+```{r additional Atoh1 targets}
+#reorder
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale$condition <- factor(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale$condition, levels = c("CRISPR_Dox_plus","CRISPR_Dox_minus","WT_EIPA","WT_DMSO"), ordered=T)
+
+#comparision
+xxxxl <- DotPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, features = c("Creb3l1","Kit","Cbfa2t3","Sox9","Sct","Hdac1","Gfi1","Maml3","Dll4","Cbfa2t2","Neurog3"), group.by = "condition", assay = "RNA", scale = TRUE) + th2 + scale_colour_gradient2(low = "#FAFAFA", mid = "#FF9800", high = "#E65100")
+xxxxl
+
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_sp_Scale_additionalAtoh_Dotplot(RNA)_reordered_dark2nd.jpg", height = 2.8, width = 8.5, plot = xxxxl, quality = 100)
+```
+
+```{r DECENT analysis_secretory progenitor}
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+sp_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+sp_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+sp_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = sp_DECENT_DMOSvsEIPA)
+sp_DECENT_Doxminusvsplus_matrix <- as.matrix(x = sp_DECENT_Doxminusvsplus)
+
+sp_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+sp_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+sp_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(sp_condition_DECENT_DMSOvsEIPA)
+sp_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(sp_condition_DECENT_Doxminusvsplus)
+
+sp_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = sp_condition_DECENT_DMSOvsEIPA_transpose)
+sp_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = sp_condition_DECENT_Doxminusvsplus_transpose)
+
+sp_DECENT_DMSOvsEIPA_combined <- list(sp_DECENT_DMSOvsEIPA_matrix, sp_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(sp_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+sp_DECENT_Doxminusvsplus_combined <- list(sp_DECENT_Doxminusvsplus_matrix, sp_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(sp_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+sp_DECENT_DMSOvsEIPA.table <- decent(sp_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(sp_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(sp_DECENT_DMSOvsEIPA.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/sp_DECENT_DMSOvsEIPA.csv")
+sp_DECENT_Doxminusvsplus.table <- decent(sp_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(sp_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(sp_DECENT_Doxminusvsplus.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/sp_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_enterocyte}
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+Enterocyte_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+Enterocyte_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+Enterocyte_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = Enterocyte_DECENT_DMOSvsEIPA)
+Enterocyte_DECENT_Doxminusvsplus_matrix <- as.matrix(x = Enterocyte_DECENT_Doxminusvsplus)
+
+Enterocyte_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+Enterocyte_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+Enterocyte_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(Enterocyte_condition_DECENT_DMSOvsEIPA)
+Enterocyte_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(Enterocyte_condition_DECENT_Doxminusvsplus)
+
+Enterocyte_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = Enterocyte_condition_DECENT_DMSOvsEIPA_transpose)
+Enterocyte_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = Enterocyte_condition_DECENT_Doxminusvsplus_transpose)
+
+Enterocyte_DECENT_DMSOvsEIPA_combined <- list(Enterocyte_DECENT_DMSOvsEIPA_matrix, Enterocyte_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(Enterocyte_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+Enterocyte_DECENT_Doxminusvsplus_combined <- list(Enterocyte_DECENT_Doxminusvsplus_matrix, Enterocyte_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(Enterocyte_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+Enterocyte_DECENT_DMSOvsEIPA.table <- decent(Enterocyte_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(Enterocyte_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(Enterocyte_DECENT_DMSOvsEIPA.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/Enterocyte_DECENT_DMSOvsEIPA.csv")
+Enterocyte_DECENT_Doxminusvsplus.table <- decent(Enterocyte_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(Enterocyte_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(Enterocyte_DECENT_Doxminusvsplus.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/Enterocyte_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_Clu}
+Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_scale_DECENT_DMSOvsEIPA <- Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_DMSOnEIPAScale
+Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_scale_DECENT_Doxminusvsplus <- Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_DoxMinusnPlusScale
+
+
+Clu_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_scale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+Clu_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_scale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+Clu_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = Clu_DECENT_DMOSvsEIPA)
+Clu_DECENT_Doxminusvsplus_matrix <- as.matrix(x = Clu_DECENT_Doxminusvsplus)
+
+Clu_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_scale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+Clu_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Clu_scale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+Clu_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(Clu_condition_DECENT_DMSOvsEIPA)
+Clu_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(Clu_condition_DECENT_Doxminusvsplus)
+
+Clu_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = Clu_condition_DECENT_DMSOvsEIPA_transpose)
+Clu_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = Clu_condition_DECENT_Doxminusvsplus_transpose)
+
+Clu_DECENT_DMSOvsEIPA_combined <- list(Clu_DECENT_DMSOvsEIPA_matrix, Clu_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(Clu_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+Clu_DECENT_Doxminusvsplus_combined <- list(Clu_DECENT_Doxminusvsplus_matrix, Clu_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(Clu_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+#run DECENT
+Clu_DECENT_DMSOvsEIPA.table <- decent(Clu_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(Clu_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+#Export list
+write.csv(Clu_DECENT_DMSOvsEIPA.table, "/Volumes/Yi_ProV&P/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/Clu_DECENT_DMSOvsEIPA.csv")
+
+#run DECENT
+Clu_DECENT_Doxminusvsplus.table <- decent(Clu_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(Clu_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+#Export list
+write.csv(Clu_DECENT_Doxminusvsplus.table, "/Volumes/Yi_ProV&P/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/Clu_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_ISC}
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DECENT_DMSOvsEIPA <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DECENT_Doxminusvsplus <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+ISC_DECENT_DMOSvsEIPA <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+ISC_DECENT_Doxminusvsplus <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+ISC_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = ISC_DECENT_DMOSvsEIPA)
+ISC_DECENT_Doxminusvsplus_matrix <- as.matrix(x = ISC_DECENT_Doxminusvsplus)
+
+ISC_condition_DECENT_DMSOvsEIPA <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+ISC_condition_DECENT_Doxminusvsplus <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+ISC_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(ISC_condition_DECENT_DMSOvsEIPA)
+ISC_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(ISC_condition_DECENT_Doxminusvsplus)
+
+ISC_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = ISC_condition_DECENT_DMSOvsEIPA_transpose)
+ISC_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = ISC_condition_DECENT_Doxminusvsplus_transpose)
+
+ISC_DECENT_DMSOvsEIPA_combined <- list(ISC_DECENT_DMSOvsEIPA_matrix, ISC_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(ISC_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+ISC_DECENT_Doxminusvsplus_combined <- list(ISC_DECENT_Doxminusvsplus_matrix, ISC_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(ISC_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+ISC_DECENT_DMSOvsEIPA.table <- decent(ISC_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(ISC_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), parallel = T, n.cores = 2)
+write.csv(ISC_DECENT_DMSOvsEIPA.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/ISC_DECENT_DMSOvsEIPA.csv")
+ISC_DECENT_Doxminusvsplus.table <- decent(ISC_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(ISC_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(Enterocyte_DECENT_Doxminusvsplus.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_ISC_low prof.}
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp <-subset(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, idents = "ISC_high_proliferative")
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp_DECENT_DMSOvsEIPA <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp_DECENT_Doxminusvsplus <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+ISCenriched_lp_DECENT_DMOSvsEIPA <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+ISCenriched_lp_DECENT_Doxminusvsplus <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+ISCenriched_lp_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = ISCenriched_lp_DECENT_DMOSvsEIPA)
+ISCenriched_lp_DECENT_Doxminusvsplus_matrix <- as.matrix(x = ISCenriched_lp_DECENT_Doxminusvsplus)
+
+ISCenriched_lp_condition_DECENT_DMSOvsEIPA <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+ISCenriched_lp_condition_DECENT_Doxminusvsplus <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_lp_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+ISCenriched_lp_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(ISCenriched_lp_condition_DECENT_DMSOvsEIPA)
+ISCenriched_lp_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(ISCenriched_lp_condition_DECENT_Doxminusvsplus)
+
+ISCenriched_lp_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = ISCenriched_lp_condition_DECENT_DMSOvsEIPA_transpose)
+ISCenriched_lp_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = ISCenriched_lp_condition_DECENT_Doxminusvsplus_transpose)
+
+ISCenriched_lp_DECENT_DMSOvsEIPA_combined <- list(ISCenriched_lp_DECENT_DMSOvsEIPA_matrix, ISCenriched_lp_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(ISCenriched_lp_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+ISCenriched_lp_DECENT_Doxminusvsplus_combined <- list(ISCenriched_lp_DECENT_Doxminusvsplus_matrix, ISCenriched_lp_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(ISCenriched_lp_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+#run DECENT
+ISCenriched_lp_DECENT_DMSOvsEIPA.table <- decent(ISCenriched_lp_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(ISCenriched_lp_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+#Export list
+write.csv(ISCenriched_lp_DECENT_DMSOvsEIPA.table, "~/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/ISCenriched_lp_DECENT_DMSOvsEIPA.csv")
+
+#run DECENT
+ISCenriched_lp_DECENT_Doxminusvsplus.table <- decent(ISCenriched_lp_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(ISCenriched_lp_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+#Export list
+write.csv(ISCenriched_lp_DECENT_Doxminusvsplus.table, "~/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/ISCenriched_lp_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_ISC_high prof.}
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp <-subset(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, idents = "ISC_high_proliferative")
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp_DECENT_DMSOvsEIPA <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp_DECENT_Doxminusvsplus <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+ISCenriched_hp_DECENT_DMOSvsEIPA <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+ISCenriched_hp_DECENT_Doxminusvsplus <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+ISCenriched_hp_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = ISCenriched_hp_DECENT_DMOSvsEIPA)
+ISCenriched_hp_DECENT_Doxminusvsplus_matrix <- as.matrix(x = ISCenriched_hp_DECENT_Doxminusvsplus)
+
+ISCenriched_hp_condition_DECENT_DMSOvsEIPA <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+ISCenriched_hp_condition_DECENT_Doxminusvsplus <- data.frame(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_hp_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+ISCenriched_hp_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(ISCenriched_hp_condition_DECENT_DMSOvsEIPA)
+ISCenriched_hp_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(ISCenriched_hp_condition_DECENT_Doxminusvsplus)
+
+ISCenriched_hp_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = ISCenriched_hp_condition_DECENT_DMSOvsEIPA_transpose)
+ISCenriched_hp_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = ISCenriched_hp_condition_DECENT_Doxminusvsplus_transpose)
+
+ISCenriched_hp_DECENT_DMSOvsEIPA_combined <- list(ISCenriched_hp_DECENT_DMSOvsEIPA_matrix, ISCenriched_hp_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(ISCenriched_hp_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+ISCenriched_hp_DECENT_Doxminusvsplus_combined <- list(ISCenriched_hp_DECENT_Doxminusvsplus_matrix, ISCenriched_hp_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(ISCenriched_hp_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+#run DECENT
+ISCenriched_hp_DECENT_DMSOvsEIPA.table <- decent(ISCenriched_hp_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(ISCenriched_hp_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1),n.cores = 6)
+#Export list
+write.csv(ISCenriched_hp_DECENT_DMSOvsEIPA.table, "~/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/ISCenriched_hp_DECENT_DMSOvsEIPA.csv")
+
+#run DECENT
+ISCenriched_hp_DECENT_Doxminusvsplus.table <- decent(ISCenriched_hp_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(ISCenriched_hp_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+#Export list
+write.csv(ISCenriched_hp_DECENT_Doxminusvsplus.table, "~/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/ISCenriched_hp_DECENT_Doxminusvsplus.csv")
+```
+
+```{r DECENT analysis_Goblet precursor}
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+GP_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+GP_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+GP_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = GP_DECENT_DMOSvsEIPA)
+GP_DECENT_Doxminusvsplus_matrix <- as.matrix(x = GP_DECENT_Doxminusvsplus)
+
+GP_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+GP_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+GP_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(GP_condition_DECENT_DMSOvsEIPA)
+GP_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(GP_condition_DECENT_Doxminusvsplus)
+
+GP_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = GP_condition_DECENT_DMSOvsEIPA_transpose)
+GP_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = GP_condition_DECENT_Doxminusvsplus_transpose)
+
+GP_DECENT_DMSOvsEIPA_combined <- list(GP_DECENT_DMSOvsEIPA_matrix, GP_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(GP_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+GP_DECENT_Doxminusvsplus_combined <- list(GP_DECENT_Doxminusvsplus_matrix, GP_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(GP_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+GP_DECENT_DMSOvsEIPA.table <- decent(GP_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(GP_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), parallel = T, n.cores = 7)
+write.csv(GP_DECENT_DMSOvsEIPA.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/GP_DECENT_DMSOvsEIPA.csv")
+GP_DECENT_Doxminusvsplus.table <- decent(GP_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(GP_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(GP_DECENT_Doxminusvsplus.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/GP_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_GobPan progenitor}
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+GobPanP_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+GobPanP_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+GobPanP_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = GobPanP_DECENT_DMOSvsEIPA)
+GobPanP_DECENT_Doxminusvsplus_matrix <- as.matrix(x = GobPanP_DECENT_Doxminusvsplus)
+
+GobPanP_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+GobPanP_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+GobPanP_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(GobPanP_condition_DECENT_DMSOvsEIPA)
+GobPanP_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(GobPanP_condition_DECENT_Doxminusvsplus)
+
+GobPanP_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = GobPanP_condition_DECENT_DMSOvsEIPA_transpose)
+GobPanP_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = GobPanP_condition_DECENT_Doxminusvsplus_transpose)
+
+GobPanP_DECENT_DMSOvsEIPA_combined <- list(GobPanP_DECENT_DMSOvsEIPA_matrix, GobPanP_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(GobPanP_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+GobPanP_DECENT_Doxminusvsplus_combined <- list(GobPanP_DECENT_Doxminusvsplus_matrix, GobPanP_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(GobPanP_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+#run DECENT
+GobPanP_DECENT_DMSOvsEIPA.table <- decent(GobPanP_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(GobPanP_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), n.cores = 11)
+#Export list
+write.csv(GobPanP_DECENT_DMSOvsEIPA.table, "/Volumes/Yi_ProV&P/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/GobPanP_DECENT_DMSOvsEIPA.csv")
+
+#run DECENT
+GobPanP_DECENT_Doxminusvsplus.table <- decent(GobPanP_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(GobPanP_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), n.cores = 13)
+#Export list
+write.csv(GobPanP_DECENT_Doxminusvsplus.table, "/Volumes/Yi_ProV&P/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/GobPanP_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r DECENT analysis_Goblet/Paneth cell}
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+GobPanP_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+GobPanP_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+GobPanP_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = GobPanP_DECENT_DMOSvsEIPA)
+GobPanP_DECENT_Doxminusvsplus_matrix <- as.matrix(x = GobPanP_DECENT_Doxminusvsplus)
+
+GobPanP_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+GobPanP_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+GobPanP_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(GobPanP_condition_DECENT_DMSOvsEIPA)
+GobPanP_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(GobPanP_condition_DECENT_Doxminusvsplus)
+
+GobPanP_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = GobPanP_condition_DECENT_DMSOvsEIPA_transpose)
+GobPanP_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = GobPanP_condition_DECENT_Doxminusvsplus_transpose)
+
+GobPanP_DECENT_DMSOvsEIPA_combined <- list(GobPanP_DECENT_DMSOvsEIPA_matrix, GobPanP_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(GobPanP_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+GobPanP_DECENT_Doxminusvsplus_combined <- list(GobPanP_DECENT_Doxminusvsplus_matrix, GobPanP_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(GobPanP_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+GobPanP_DECENT_DMSOvsEIPA.table <- decent(GobPanP_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(GobPanP_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), parallel = T, n.cores = 11)
+write.csv(GobPanP_DECENT_DMSOvsEIPA.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/GobPanP_DECENT_DMSOvsEIPA.csv")
+GobPanP_DECENT_Doxminusvsplus.table <- decent(GobPanP_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(GobPanP_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(GobPanP_DECENT_Doxminusvsplus.table, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/GobPanP_DECENT_Doxminusvsplus.csv")
+
+```
+
+Session Info
+R version 4.1.3 (2022-03-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Monterey 12.4
+Matrix products: default
+LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+attached base packages:
+[1] stats     graphics
+[3] grDevices utils
+[5] datasets  methods
+[7] base
+other attached packages:
+[1] DECENT_1.1.1
+[2] readr_2.1.3
+[3] ggplot2_3.4.0
+[4] dplyr_1.0.10
+[5] patchwork_1.1.2
+[6] SeuratObject_4.1.3
+[7] Seurat_4.3.0
+loaded via a namespace (and not attached):
+  [1] VGAM_1.1-7
+  [2] Rtsne_0.16
+  [3] colorspace_2.0-3
+  [4] deldir_1.0-6
+  [5] ellipsis_0.3.2
+  [6] ggridges_0.5.4
+  [7] rstudioapi_0.14
+  [8] spatstat.data_3.0-0
+  [9] leiden_0.4.3
+ [10] listenv_0.9.0
+ [11] ggrepel_0.9.2
+ [12] fansi_1.0.3
+ [13] codetools_0.2-18
+ [14] splines_4.1.3
+ [15] doParallel_1.0.17
+ [16] knitr_1.41
+ [17] polyclip_1.10-4
+ [18] jsonlite_1.8.4
+ [19] ica_1.0-3
+ [20] cluster_2.1.4
+ [21] png_0.1-8
+ [22] uwot_0.1.14
+ [23] shiny_1.7.4
+ [24] sctransform_0.3.5
+ [25] spatstat.sparse_3.0-0
+ [26] compiler_4.1.3
+ [27] httr_1.4.4
+ [28] assertthat_0.2.1
+ [29] Matrix_1.5-1
+ [30] fastmap_1.1.0
+ [31] lazyeval_0.2.2
+ [32] limma_3.50.3
+ [33] cli_3.6.0
+ [34] later_1.3.0
+ [35] htmltools_0.5.4
+ [36] tools_4.1.3
+ [37] igraph_1.3.5
+ [38] gtable_0.3.1
+ [39] glue_1.6.2
+ [40] RANN_2.6.1
+ [41] reshape2_1.4.4
+ [42] Rcpp_1.0.9
+ [43] ZIM_1.1.0
+ [44] scattermore_0.8
+ [45] vctrs_0.5.1
+ [46] spatstat.explore_3.0-5
+ [47] nlme_3.1-161
+ [48] progressr_0.13.0
+ [49] iterators_1.0.14
+ [50] lmtest_0.9-40
+ [51] spatstat.random_3.0-1
+ [52] xfun_0.36
+ [53] stringr_1.5.0
+ [54] globals_0.16.2
+ [55] mime_0.12
+ [56] miniUI_0.1.1.1
+ [57] lifecycle_1.0.3
+ [58] irlba_2.3.5.1
+ [59] statmod_1.5.0
+ [60] goftest_1.2-3
+ [61] future_1.30.0
+ [62] edgeR_3.36.0
+ [63] MASS_7.3-58.1
+ [64] zoo_1.8-11
+ [65] scales_1.2.1
+ [66] hms_1.1.2
+ [67] promises_1.2.0.1
+ [68] spatstat.utils_3.0-1
+ [69] parallel_4.1.3
+ [70] RColorBrewer_1.1-3
+ [71] yaml_2.3.6
+ [72] reticulate_1.27
+ [73] pbapply_1.7-0
+ [74] gridExtra_2.3
+ [75] stringi_1.7.12
+ [76] foreach_1.5.2
+ [77] rlang_1.0.6
+ [78] pkgconfig_2.0.3
+ [79] matrixStats_0.63.0
+ [80] evaluate_0.19
+ [81] lattice_0.20-45
+ [82] ROCR_1.0-11
+ [83] purrr_0.3.4
+ [84] tensor_1.5
+ [85] htmlwidgets_1.6.1
+ [86] cowplot_1.1.1
+ [87] tidyselect_1.2.0
+ [88] parallelly_1.34.0
+ [89] RcppAnnoy_0.0.20
+ [90] plyr_1.8.8
+ [91] magrittr_2.0.3
+ [92] R6_2.5.1
+ [93] generics_0.1.3
+ [94] DBI_1.1.3
+ [95] pillar_1.8.1
+ [96] withr_2.5.0
+ [97] fitdistrplus_1.1-8
+ [98] survival_3.5-0
+ [99] abind_1.4-5
+[100] sp_1.5-1
+[101] tibble_3.1.8
+[102] future.apply_1.10.0
+[103] KernSmooth_2.23-20
+[104] utf8_1.2.2
+[105] spatstat.geom_3.0-3
+[106] plotly_4.10.1
+[107] tzdb_0.3.0
+[108] rmarkdown_2.19
+[109] locfit_1.5-9.7
+[110] grid_4.1.3
+[111] data.table_1.14.6
+[112] digest_0.6.31
+[113] xtable_1.8-4
+[114] tidyr_1.2.1
+[115] httpuv_1.6.8
+[116] stats4_4.1.3
+[117] munsell_0.5.0
+[118] viridisLite_0.4.1

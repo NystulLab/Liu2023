@@ -1,0 +1,971 @@
+---
+title: "Liu.Y 2022 scRNA-seq analysis"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+
+```{r load libraries}
+library(Seurat)
+library(patchwork)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r load Seurat Object}
+#List of files to load into the environment.  Use this to reload the files into the environment after they have been created using the chunk below.  Skip this chunk the first time through the script.
+
+filtered_WT_DMSO1 <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_DMSO1.rds")
+filtered_WT_EIPA1 <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_EIPA1.rds")
+filtered_WT_DMSO2 <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_DMSO2.rds")
+filtered_WT_EIPA2 <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_EIPA2.rds")
+filtered_CRISPR_Dox_minus <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/Dox+ vs Dox-/Seurat object/filtered_CRISPR_Dox_minus.rds")
+filtered_CRISPR_Dox_plus <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/Dox+ vs Dox-/Seurat object/filtered_CRISPR_Dox_plus.rds")
+combined_sct.rds <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/combined_sct.rds")
+combined.anchors <- readRDS("/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/combined.anchors.rds")
+```
+
+```{r make Seurat objects}
+#Run this the first time through the script.  After that, just load the data using the chunk above.
+
+#WT_DMSO1 (1st biological replicate for WT_DMSO, sample submitted on 1/18/22)
+seur.data <- Read10X("/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Matrix file/DMSO/filtered_feature_bc_matrix/")
+WT_DMSO1 <- CreateSeuratObject(counts = seur.data, project = "WT_DMSO1", min.cells = 3, min.features = 200)
+WT_DMSO1
+##view #17922 genes and # 22097 single cells
+dim(WT_DMSO1)
+##summary of total expression per single cell
+summary(colSums(WT_DMSO1))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #499    1751    5971    8078   12683   75083
+summary (WT_DMSO1$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #207     763    2044    2099    3219    7293 
+
+#Pay attention the difference of the syntax
+WT_DMSO1[["percent.mt"]] <- PercentageFeatureSet(WT_DMSO1, pattern = "^mt-")
+p001 <- VlnPlot(WT_DMSO1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol=3)
+p001
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/WT_DMSO1_quality.png", height = 8, width = 15, plot = p001)
+
+WT_DMSO1 -> WT_DMSO1_orig
+
+filtered_WT_DMSO1 <- subset(WT_DMSO1_orig, subset = nFeature_RNA > 250 & nFeature_RNA < 6500 & nCount_RNA > 500 & nCount_RNA < 60000 & percent.mt < 15)
+filtered_WT_DMSO1
+##view #17922 genes and # 14417 single cells
+dim(filtered_WT_DMSO1)
+##summary of total expression per single cell
+summary(colSums(filtered_WT_DMSO1))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #501    6059   11112   11127   14984   56047 
+summary (filtered_WT_DMSO1$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #311    2047    2897    2732    3610    6497 
+
+#WT_EIPA1 (1st biological replicate for WT_EIPA, sample submitted on 1/18/22)
+
+seur.data <- Read10X("/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Matrix file/EIPA/filtered_feature_bc_matrix/")
+WT_EIPA1 <- CreateSeuratObject(counts = seur.data, project = "WT_EIPA1", min.cells = 3, min.features = 200)
+WT_EIPA1
+##view #17989 genes and # 20585 single cells
+dim(WT_EIPA1)
+##summary of total expression per single cell
+summary(colSums(WT_EIPA1))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #500    1865    8034    8569   12808  164998
+summary (WT_EIPA1$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #202     829    2306    2155    3142    8514 
+
+WT_EIPA1[["percent.mt"]] <- PercentageFeatureSet(WT_EIPA1, pattern = "^mt-")
+p002 <- VlnPlot(WT_EIPA1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol=3)
+p002
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/WT_EIPA1_quality.png", height = 8, width = 15, plot = p002)
+
+WT_EIPA1 -> WT_EIPA1_orig
+
+filtered_WT_EIPA1 <- subset(WT_EIPA1_orig, subset = nFeature_RNA > 250 & nFeature_RNA < 7000 & nCount_RNA > 500 & nCount_RNA < 75000 & percent.mt <13)
+filtered_WT_EIPA1
+##view #17989 genes and # 15257 single cells
+dim(filtered_WT_EIPA1)
+##summary of total expression per single cell
+summary(colSums(filtered_WT_EIPA1))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #501    5325   10592   10690   14295   68922 
+summary (filtered_WT_EIPA1$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #296    1882    2739    2571    3418    6879 
+
+#WT_DMSO2 (2nd biological replicate for WT_DMSO, sample submitted on 3/4/22)
+
+seur.data <- Read10X("/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Matrix file/DMSO_rep2/filtered_feature_bc_matrix/")
+WT_DMSO2 <- CreateSeuratObject(counts = seur.data, project = "WT_DMSO2", min.cells = 3, min.features = 200)
+WT_DMSO2
+##view #17935 genes and # 25481 single cells
+dim(WT_DMSO2)
+##summary of total expression per single cell
+summary(colSums(WT_DMSO2))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #500    2189    8286    9786   14463  108981
+summary (WT_DMSO2$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #233    1002    2521    2414    3459    7957 
+
+WT_DMSO2[["percent.mt"]] <- PercentageFeatureSet(WT_DMSO2, pattern = "^mt-")
+p003 <- VlnPlot(WT_DMSO2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol=3)
+p003
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/WT_DMSO2_quality.png", height = 8, width = 15, plot = p003)
+
+VlnPlot(WT_DMSO2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+WT_DMSO2 -> WT_DMSO2_orig
+
+filtered_WT_DMSO2 <- subset(WT_DMSO2_orig, subset = nFeature_RNA > 250 & nFeature_RNA < 8000 & nCount_RNA > 500 & nCount_RNA < 80000 & percent.mt <10)
+filtered_WT_DMSO2
+##view #17935 genes and # 20509 single cells
+dim(filtered_WT_DMSO2)
+##summary of total expression per single cell
+summary(colSums(filtered_WT_DMSO2))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #501    4969   10748   11470   15854   79754
+summary (filtered_WT_DMSO2$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #296    1849    2884    2730    3677    7650 
+
+
+#WT_EIPA2 (2nd biological replicate for WT_EIPA, sample submitted on 3/4/22)
+
+seur.data <- Read10X("/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Matrix file/EIPA_rep2/filtered_feature_bc_matrix/")
+WT_EIPA2 <- CreateSeuratObject(counts = seur.data, project = "WT_EIPA2", min.cells = 3, min.features = 200)
+WT_EIPA2
+##view #17842 genes and # 18970 single cells
+dim(WT_EIPA2)
+##summary of total expression per single cell
+summary(colSums(WT_EIPA2))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #500    3148   11898   12631   17508   91057
+summary (WT_EIPA2$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #200    1266    2845    2663    3725    7692 
+
+WT_EIPA2[["percent.mt"]] <- PercentageFeatureSet(WT_EIPA2, pattern = "^mt-")
+p004 <- VlnPlot(WT_EIPA2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol=3)
+p004
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/WT_EIPA2_quality.png", height = 8, width = 15, plot = p004)
+
+WT_EIPA2 -> WT_EIPA2_orig
+
+filtered_WT_EIPA2 <- subset(WT_EIPA2_orig, subset = nFeature_RNA > 250 & nFeature_RNA < 8000 & nCount_RNA > 500 & nCount_RNA < 75000 & percent.mt <10)
+filtered_WT_EIPA2
+##view #17842 genes and # 13905 single cells
+dim(filtered_WT_EIPA2)
+##summary of total expression per single cell
+summary(colSums(filtered_WT_EIPA2))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #502   10623   14605   16359   19930   74945
+summary (filtered_WT_EIPA2$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #282    2661    3271    3349    4024    7325 
+
+#CRISPR_Dox_minus (1st biological replicate for CRISPR, sample submitted on 3/4/22)
+
+seur.data <- Read10X("/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/Dox+ vs Dox-/Matrix file/CRISPR_CTRL/filtered_feature_bc_matrix/")
+CRISPR_Dox_minus <- CreateSeuratObject(counts = seur.data, project = "CRISPR_Dox_minus", min.cells = 3, min.features = 200)
+CRISPR_Dox_minus
+##view #17291 genes and # 22053 single cells
+dim(CRISPR_Dox_minus)
+##summary of total expression per single cell
+summary(colSums(CRISPR_Dox_minus))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #500    3148   11898   12631   17508   91057
+summary (CRISPR_Dox_minus$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #202    1618    2942    2772    3732    7577
+
+CRISPR_Dox_minus[["percent.mt"]] <- PercentageFeatureSet(CRISPR_Dox_minus, pattern = "^mt-")
+p005 <- VlnPlot(CRISPR_Dox_minus, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol=3)
+p005
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/CRISPR_Dox_minus_quality.png", height = 8, width = 15, plot = p005)
+
+CRISPR_Dox_minus -> CRISPR_Dox_minus_orig
+
+filtered_CRISPR_Dox_minus <- subset(CRISPR_Dox_minus_orig, subset = nFeature_RNA > 250 & nFeature_RNA < 7000 & nCount_RNA > 500 & nCount_RNA < 70000 & percent.mt <10)
+filtered_CRISPR_Dox_minus
+##view #17291 genes and # 17830 single cells
+dim(filtered_CRISPR_Dox_minus)
+##summary of total expression per single cell
+summary(colSums(filtered_CRISPR_Dox_minus))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #501    8764   11828   12748   16019   65262
+summary (filtered_CRISPR_Dox_minus$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #296    1849    2884    2730    3677    7650 
+
+#CRISPR_Dox_plus (1st biological replicate for CRISPR, sample submitted on 3/4/22)
+
+seur.data <- Read10X("/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/Dox+ vs Dox-/Matrix file/CRISPR_DOX/filtered_feature_bc_matrix/")
+CRISPR_Dox_plus <- CreateSeuratObject(counts = seur.data, project = "CRISPR_Dox_plus", min.cells = 3, min.features = 200)
+CRISPR_Dox_plus
+##view #17630 genes and # 14314 single cells
+dim(CRISPR_Dox_plus)
+##summary of total expression per single cell
+summary(colSums(CRISPR_Dox_plus))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #500    8172   15381   17043   22119  113079
+summary (CRISPR_Dox_plus$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #207    2512    3507    3442    4427    8330
+
+CRISPR_Dox_plus[["percent.mt"]] <- PercentageFeatureSet(CRISPR_Dox_plus, pattern = "^mt-")
+p006 <- VlnPlot(CRISPR_Dox_plus, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol=3)
+p006
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/CRISPR_Dox_plus_quality.png", height = 8, width = 15, plot = p006)
+
+CRISPR_Dox_plus -> CRISPR_Dox_plus_orig
+
+filtered_CRISPR_Dox_plus <- subset(CRISPR_Dox_plus_orig, subset = nFeature_RNA > 250 & nFeature_RNA < 8000 & nCount_RNA > 500 & nCount_RNA < 80000 & percent.mt <15)
+filtered_CRISPR_Dox_plus
+
+##view #17630 genes and # 11983 single cells
+dim(filtered_CRISPR_Dox_plus)
+##summary of total expression per single cell
+summary(colSums(filtered_CRISPR_Dox_plus))
+#result: Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #501   12314   17034   19434   23897   79083
+summary (filtered_CRISPR_Dox_plus$nFeature_RNA)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    #332    3065    3755    3828    4629    7884 
+```
+
+```{r renaming datasets}
+#renaming datasets
+filtered_WT_DMSO1@meta.data[, "dataset"] <- "filtered_WT_DMSO1"
+filtered_WT_EIPA1@meta.data[, "dataset"] <- "filtered_WT_EIPA1"
+filtered_WT_DMSO2@meta.data[, "dataset"] <- "filtered_WT_DMSO2"
+filtered_WT_EIPA2@meta.data[, "dataset"] <- "filtered_WT_EIPA2"
+filtered_CRISPR_Dox_minus@meta.data[, "dataset"] <- "filtered_CRISPR_Dox_minus"
+filtered_CRISPR_Dox_plus@meta.data[, "dataset"] <- "filtered_CRISPR_Dox_plus"
+
+filtered_WT_DMSO1 <- RenameCells(filtered_WT_DMSO1, add.cell.id = "filtered_WT_DMSO1")
+filtered_WT_EIPA1 <- RenameCells(filtered_WT_EIPA1, add.cell.id = "filtered_WT_EIPA1")
+filtered_WT_DMSO2 <- RenameCells(filtered_WT_DMSO2, add.cell.id = "filtered_WT_DMSO2")
+filtered_WT_EIPA2 <- RenameCells(filtered_WT_EIPA2, add.cell.id = "filtered_WT_EIPA2")
+filtered_CRISPR_Dox_minus <- RenameCells(filtered_CRISPR_Dox_minus, add.cell.id = "filtered_CRISPR_Dox_minus")
+filtered_CRISPR_Dox_plus <- RenameCells(filtered_CRISPR_Dox_plus, add.cell.id = "filtered_CRISPR_Dox_plus")
+```
+
+```{r adding column "condition" for downstream analysis}
+#renaming conditions
+filtered_WT_DMSO1@meta.data[, "condition"] <- "WT_DMSO"
+filtered_WT_EIPA1@meta.data[, "condition"] <- "WT_EIPA"
+filtered_WT_DMSO2@meta.data[, "condition"] <- "WT_DMSO"
+filtered_WT_EIPA2@meta.data[, "condition"] <- "WT_EIPA"
+filtered_CRISPR_Dox_minus@meta.data[, "condition"] <- "CRISPR_Dox_minus"
+filtered_CRISPR_Dox_plus@meta.data[, "condition"] <- "CRISPR_Dox_plus"
+
+#saving as RDS
+saveRDS(filtered_WT_DMSO1, "/Users/yiliumba/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_DMSO1.rds")
+saveRDS(filtered_WT_EIPA1, "/Users/yiliumba/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_EIPA1.rds")
+saveRDS(filtered_WT_DMSO2, "/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_DMSO2.rds")
+saveRDS(filtered_WT_EIPA2, "/Users/yiliumba/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/DMSO vs EIPA/Seurat object/filtered_WT_EIPA2.rds")
+saveRDS(filtered_CRISPR_Dox_minus, "/Users/yiliumba/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/Dox+ vs Dox-/Seurat object/filtered_CRISPR_Dox_minus.rds")
+saveRDS(filtered_CRISPR_Dox_plus, "/Users/yiliumba/Desktop/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/Dox+ vs Dox-/Seurat object/filtered_CRISPR_Dox_plus.rds")
+```
+
+```{r Merge Datasets Through Integration method of SCT}
+combined <- merge(x = filtered_WT_DMSO1, y = c(filtered_WT_EIPA1, filtered_WT_DMSO2, filtered_WT_EIPA2,  filtered_CRISPR_Dox_minus, filtered_CRISPR_Dox_plus),  merge.data = T, project = "io")
+#save the "combined"
+saveRDS(combined, "/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/combined.rds")
+
+DefaultAssay(combined) <- "RNA"
+
+ifnb.list <- SplitObject(combined, split.by = "dataset")
+ifnb.list <- lapply(X = ifnb.list,FUN = SCTransform)
+features <- SelectIntegrationFeatures(object.list = ifnb.list, nfeatures = 5000)
+ifnb.list <- PrepSCTIntegration(object.list = ifnb.list, anchor.features = features)
+
+combined.anchors <- FindIntegrationAnchors(object.list = ifnb.list, normalization.method = 'SCT', anchor.features = features)
+#save the "combined.anchors"
+saveRDS(combined.anchors, "/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/combined.anchors.rds")
+
+allcombined_sct <- IntegrateData(anchorset = combined.anchors, normalization.method = 'SCT')
+
+saveRDS(allcombined_sct, "/wynton/home/barber/yiliu681/scRNAseq/allcombined_sct.rds")
+
+DefaultAssay(allcombined_sct) <- "integrated" 
+
+# PCA analysis
+allcombined_sct_pca <- RunPCA(allcombined_sct, verbose = FALSE)
+
+saveRDS(allcombined_sct_pca, "/wynton/home/barber/yiliu681/scRNAseq/allcombined_sct_pca.rds")
+
+# Determine the dimentionality using ElbowPlot
+ElbowPlot(allcombined_sct_pca, ndims = 50)
+
+# Find neighbors
+DefaultAssay(allcombined_sct_pca) <- "integrated" 
+allcombined_sct_pca <- RunPCA(allcombined_sct_pca, verbose = FALSE)
+allcombined_sct_pca <- FindNeighbors(allcombined_sct_pca, dims = 1:45)
+Cluster_allcombined_sct <- FindClusters(allcombined_sct_pca, resolution = 0.8)
+
+## Clustering with UMAP
+Cluster_allcombined_sct <- RunUMAP(Cluster_allcombined_sct, dims = 1:45)
+
+# save "Cluster_allcombined_sct"
+saveRDS(Cluster_allcombined_sct, "/wynton/home/barber/yiliu681/scRNAseq/Cluster_allcombined_sct.rds")
+
+# Visualization combined
+p1 <- DimPlot(Cluster_allcombined_sct, reduction = "umap", group.by = "dataset")
+p2 <- DimPlot(Cluster_allcombined_sct, reduction = "umap", label = TRUE, repel = TRUE)
+p1 + p2
+p3 <- p1 + p2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_UMAP_combined.jpg", height = 8, width = 20, plot = p3, quality = 50)
+
+## Visualization split
+#split by dataset
+p4 <- DimPlot(Cluster_allcombined_sct, reduction = "umap", split.by = "dataset", ncol = 4)
+p4
+ggsave(filename = "/wynton/home/barber/yiliu681/scRNAseq/Cluster_allcombined_sct_UMAP_split.jpg", height = 15, width = 15, plot = p4, quality = 50)
+
+#split by condition
+p5 <- DimPlot(Cluster_allcombined_sct, reduction = "umap", split.by = "condition", ncol = 4)
+p5
+ggsave(filename = "/wynton/home/barber/yiliu681/scRNAseq/Cluster_allcombined_sct_UMAP_split_condition.jpg", height = 10, width = 15, plot = p5, quality = 50)
+```
+
+```{r find all positive markers and Doheatmap visulization for cluster identification}
+
+allcombined_all_positive.markers <- FindAllMarkers(Cluster_allcombined_sct, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+    allcombined_all_positive.markers %>%
+    group_by(cluster) %>%
+    top_n(n = 15, wt = avg_log2FC) -> top15
+pxxx <- DoHeatmap(Cluster_allcombined_sct, features = top15$gene, size = 6) + NoLegend() + theme(text = element_text(size = 5))
+
+pxxx
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_allcombined_sct_doheatmap.jpg", height = 20, width = 40, plot = pxxx, limitsize = FALSE, quality = 50)
+```
+
+```{r featureplot to briefly check signature genes in the combined control dataset}
+##ISC
+pi2 <- FeaturePlot(Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Lgr5", "Ascl2", "Slc12a2","Axin2", "Olfm4"))
+pi2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_ISC.jpg", height = 25, width = 12, plot = pi2, quality = 50)
+
+##Paneth
+pp2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Lyz1", "Defa17", "Defa22", "Ang4", "Mptx2", "Sox9"), ncol = 2)
+pp2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_Paneth.jpg", height = 25, width = 12, plot = pp2, quality = 50)
+
+##Goblet
+pg2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Muc2", "Clca3", "Tff3", "Agr2", "Klf4"), ncol = 2)
+pg2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_Goblet.jpg", height = 25, width = 12, plot = pg2, quality = 50)
+
+##Tuft
+pt2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Dclk1", "Trpm5", "Gfi1b", "Il25"), ncol = 2)
+pt2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_tuft.jpg", height = 15, width = 12, plot = pt2, quality = 50)
+
+##Secretory progenitor
+psp2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Atoh1","Dll1", "Gfi1", "Spdef", "Neurog3", "Mki67", "Cdk4"), ncol = 2)
+psp2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_sp.jpg", height = 25, width = 12, plot = psp2, quality = 50)
+
+##Absorptive progenitor/TA
+pap2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Hes1","Mki67","Cdk4", "Mcm5","Id1","Hmgb2"), ncol = 2)
+pap2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_ap.jpg", height = 25, width = 12, plot = pap2, quality = 50)
+
+##Enterocyte
+pe2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Hes1","Alpi", "Apoa1", "Apoa4", "Fabp1", "Batf2", "Mki67","Cdk4"), ncol = 2)
+pe2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_enterocyte.jpg", height = 25, width = 12, plot = pe2, quality = 50)
+
+##Enterocyte_premature
+pei2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Hes1","Alpi", "Apoa1", "Apoa4", "Fabp1", "Reg3g", "Krt8"), ncol = 2)
+pei2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_enteroimmature.jpg", height = 25, width = 12, plot = pei2, quality = 50)
+
+##+4 
+pf2 <- FeaturePlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus2, features = c("Krt19","Clu", "Apoa1", "Apoa4", "Fabp1"), ncol = 2)
+pf2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_featureplot_f.jpg", height = 25, width = 12, plot = pf2, quality = 50)
+```
+
+```{r use dotplot to further validate signature gene expression clustered by "find all positive markers"}
+##create a subset containing only control datasets (CRISPR_Dox_minus, WT_DMSO)
+Cluster_allcombined_sct_subset_DMSOnDoxminus2 <- subset (x = Cluster_allcombined_sct, subset = (condition == "WT_DMSO" | condition == "CRISPR_Dox_minus"))
+
+#save RDS
+saveRDS(Cluster_allcombined_sct_subset_DMSO, "/wynton/home/barber/yiliu681/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_allcombined_sct_subset_DMSO")
+saveRDS(Cluster_allcombined_sct_subset_Doxminus, "/wynton/home/barber/yiliu681/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_allcombined_sct_subset_Doxminus")
+saveRDS(Cluster_allcombined_sct_subset_DMSOnDoxminus2, "/wynton/home/barber/yiliu681/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_allcombined_sct_subset_DMSOnDoxminus2")
+
+##ISC
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pi <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Lgr5", "Ascl2", "Slc12a2","Axin2", "Olfm4", "Gkn3", "Smoc2", "Cdca7", "Mki67", "Cdk4", "Mcm5", "Mcm6", "Pcna"))
+pi
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_ISC.jpg", height = 20, width = 12, plot = pi, quality = 50)
+
+##Paneth
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pp <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4", "Mptx2", "Dll4", "Sox9", "Ephb3", "Mmp7","Atoh1", "Gfi1", "Spdef"))
+pp
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_Paneth.jpg", height = 30, width = 12, plot = pp, quality = 50)
+
+##Goblet
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pg <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Muc2", "Clca3", "Tff3", "Agr2", "Klf4","Atoh1", "Gfi1", "Spdef"))
+pg
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_Goblet.jpg", height = 30, width = 12, plot = pg, quality = 50)
+
+##EEC
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pe <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Chga", "Chgb", "Tac1", "Tph1", "Neurog3", "Atoh1", "Gfi1", "Spdef","Pax6","Arx"))
+pe
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_EEC.jpg", height = 30, width = 12, plot = pe, quality = 50)
+
+##M cell
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pm <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Ccl9", "Serpinb1a", "Serpinb6a", "Tnfaip2", "Ccl6"))
+pm
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_m.jpg", height = 30, width = 12, plot = pt, quality = 50)
+#->conclusion, M cell is confusion, signatures are not enriched in a cluster.
+
+##Tuft cell
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pt <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Dclk1", "Trpm5", "Gfi1b", "Il25"))
+pt
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_tuft.jpg", height = 30, width = 12, plot = pt, quality = 50)
+
+##Secretory progenitor
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+psp <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Atoh1", "Hes1","Dll1", "Gfi1", "Spdef", "Neurog3", "Mki67", "Cdk4", "Mcm5", "Mcm6", "Pcna"))
+psp
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_sp.jpg", height = 30, width = 12, plot = psp, quality = 50)
+
+##Absorptive progenitor/TA
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pap <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Hes1","Atoh1","Dll1","Mki67","Cdk4", "Mcm5", "Mcm6", "Pcna","Id1","Hmgb2","Alpi"))
+pap
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_ap.jpg", height = 30, width = 12, plot = pap, quality = 50)
+
+##Enterocyte
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pe <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Hes1","Alpi", "Apoa1", "Apoa4", "Fabp1", "Batf2", "Mki67","Cdk4", "Mcm5", "Mcm6", "Pcna"))
+pe
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_E.jpg", height = 30, width = 12, plot = pe, quality = 50)
+
+##Enterocyte_immature
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pei <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Hes1","Alpi","Aldob", "Apoa1", "Apoa4", "Fabp1", "Reg3g", "Krt8", "Mki67","Cdk4", "Mcm5", "Mcm6", "Pcna"))
+pei
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_Eimmature.jpg", height = 30, width = 15, plot = pei, quality = 50)
+
+##+4 cells
+DefaultAssay(Cluster_allcombined_sct_subset_DMSOnDoxminus)
+pf <- DotPlot(object = Cluster_allcombined_sct_subset_DMSOnDoxminus, features = c("Bmi1", "Tert", "Hopx", "Krt19", "Lrig1", "Clu", "Mex3a","Mki67","Cdk4", "Mcm5", "Mcm6", "Pcna"))
+pf
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Allcombined_subset_DMSOnDoxminus_dotplot_4.jpg", height = 30, width = 12, plot = pf, quality = 50)
+```
+
+```{r assign clusters to create assigned Seurat object}
+Cluster_assigned_allcombined_sct <- RenameIdents(Cluster_allcombined_sct, `0` = "TA", `1` = "TA", `2` = "Unkonwn_proliferative",
+    `3` = "ISC_high_proliferative", `4` = "TA", `5` = "Enterocyte_premature", `6` = "TA", `7` = "Goblet/Paneth_progenitor", `8` = "ISC_high_proliferative", `9` = "EEC",
+    `10` = "Enterocyte", `11` = "Goblet_precursor", `12` = "ISC_low_proliferative", `13` = "Enterocyte", `14` = "Goblet/Paneth_progenitor", `15` = "Enterocyte_premature", `16` = "Enterocyte_premature", `17` = "Clu+",`18` = "ISC_low_proliferative",`19` = "Tuft",`20` = "Secretory_progenitor_containing",`21` = "Goblet/Paneth",`22` = "EEC precursor")
+
+saveRDS(Cluster_assigned_allcombined_sct, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_assigned_allcombined_sct.rds")
+
+##Visulization
+#combined view
+p1 <- DimPlot(Cluster_assigned_allcombined_sct, reduction = "umap", label.size = 8, group.by = "dataset")
+p1
+p2 <- DimPlot(Cluster_assigned_allcombined_sct, reduction = "umap", repel = TRUE, label = TRUE, label.size = 8)
+p2
+p1 + p2
+p3 <- p1 + p2
+p3
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_assigned_allcombined_sct_UMAPcombined.jpg", height = 18, width = 25, plot = p3, quality = 100)
+
+#split by dataset
+p1 <- DimPlot(Cluster_assigned_allcombined_sct, reduction = "umap", split.by = "dataset", label.size = 5, label = TRUE, ncol = 2)
+p1
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_assigned_allcombined_sct_UMAP_split_dataset.jpg", height = 40, width = 25, plot = p1, quality = 100)
+
+#split by condition
+p1x <- DimPlot(Cluster_assigned_allcombined_sct, split.by = "condition", label.size = 5, label = TRUE, ncol = 2) 
+p1x
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_assigned_allcombined_sct_UMAP_split_condition.jpg", height = 30, width = 20, plot = p1x, quality = 100)
+```
+
+```{r subclustering "secretory progenitor containing cluster"}
+Cluster_assigned_allcombined_sct_spc <- subset (x= Cluster_assigned_allcombined_sct, idents = "Secretory_progenitor_containing")
+
+saveRDS(Cluster_assigned_allcombined_sct_spc, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_assigned_allcombined_sct_spc.rds")
+
+# PCA analysis
+Cluster_assigned_allcombined_sct_spc_pca <- RunPCA(Cluster_assigned_allcombined_sct_spc, verbose = FALSE)
+
+#determine dimension
+ElbowPlot(Cluster_assigned_allcombined_sct_spc_pca, ndims = 50)
+
+# Find neighbors
+DefaultAssay(Cluster_assigned_allcombined_sct_spc_pca) <- "integrated" 
+Cluster_assigned_allcombined_sct_spc_pca <- RunPCA(Cluster_assigned_allcombined_sct_spc_pca, verbose = FALSE)
+Cluster_assigned_allcombined_sct_spc_pca <- FindNeighbors(Cluster_assigned_allcombined_sct_spc_pca, dims = 1:13)
+Cluster_assigned_allcombined_sct_spc_pca <- FindClusters(Cluster_assigned_allcombined_sct_spc_pca, resolution = 1)
+
+## Clustering with UMAP
+Subcluster_assigned_allcombined_sct_spc <- RunUMAP(Cluster_assigned_allcombined_sct_spc_pca, dims = 1:13)
+
+saveRDS(Subcluster_assigned_allcombined_sct_spc, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_assigned_allcombined_sct_spc.rds")
+
+##visulize UMAP
+p1 <- DimPlot(Subcluster_assigned_allcombined_sct_spc, reduction = "umap", group.by = "dataset")
+p2 <- DimPlot(Subcluster_assigned_allcombined_sct_spc, reduction = "umap", label = TRUE, repel = TRUE)
+p1 + p2
+p3 <- p1 + p2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_assigned_allcombined_sct_spc_dimplot_Atoh.jpg", height = 12, width = 12, plot = p3, quality = 50)
+
+
+#Dotplot to visulize signature gene expression within the subcluster
+DefaultAssay(Subcluster_assigned_allcombined_sct_spc)
+pspsub <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Dll1", "Gfi1", "Spdef", "Muc2","Tff3","Neurog3"))
+pspsub
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_assigned_allcombined_sct_spc_dotplot_Atoh.jpg", height = 30, width = 12, plot = pspsub, quality = 50)
+
+#Featureplot to visulize signature gene expression within the subcluster
+pspsub2 <- FeaturePlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Dll1", "Gfi1", "Spdef", "Muc2","Tff3"), ncol = 2)
+pspsub2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_assigned_allcombined_sct_spc_feature_Atoh.jpg", height = 25, width = 12, plot = pspsub2, quality = 50)
+
+# Dotplot showing averged expression in secretory progenitor and Goblet/Paneth lineage by dataset
+pyx <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("0"), group.by = "dataset")
+pyx
+
+pyx1 <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("1"), group.by = "dataset")
+pyx1
+
+pyx2 <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("2"), group.by = "dataset")
+pyx2
+
+pyx3 <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("3"), group.by = "dataset")
+pyx3
+
+pyx4 <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("4"), group.by = "dataset")
+pyx4
+
+pyx5 <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("5"), group.by = "dataset")
+pyx5
+
+pyx6 <- DotPlot(object = Subcluster_assigned_allcombined_sct_spc, features = c("Atoh1", "Hes1", "Dll1", "Gfi1", "Spdef","Sox9","Neurog3","Muc2","Tff3","Lyz1","Defa17"), idents = c("6"), group.by = "dataset")
+pyx6
+
+#-> conclusion:combine "0" and "1" as secretory progenitors for all datasets and all else as Goblet_precursor
+
+#Assign the subclusters (secretory progenitor and Goblet precursor)
+Subcluster_assigned_allcombined_sct_spc_assignedV1 <- RenameIdents(Subcluster_assigned_allcombined_sct_spc, `0` = "Secretory_progenitor", `1` = "Secretory_progenitor", `2` = "Goblet_precursor", 
+    `3` = "Goblet_precursor", `4` = "Goblet_precursor", `5` = "Goblet_precursor", `6` = "Goblet_precursor")
+
+saveRDS(Subcluster_assigned_allcombined_sct_spc_assignedV1, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_assigned_allcombined_sct_spc_assignedV1.rds")
+```
+
+```{r create a refined combined Seurat object by assigning the secretory progenitor and Goblet precursor to the original object}
+#set secretory progenitor
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_assigned_allcombined_sct, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "0"), "Secretory_progenitor")
+
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_refined_assigned_allcombined_sctV1, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "1"), "Secretory_progenitor")
+
+#set Goblet precursor
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_refined_assigned_allcombined_sctV1, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "2"), "Goblet_precursor")
+
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_refined_assigned_allcombined_sctV1, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "3"), "Goblet_precursor")
+
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_refined_assigned_allcombined_sctV1, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "4"), "Goblet_precursor")
+
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_refined_assigned_allcombined_sctV1, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "5"), "Goblet_precursor")
+
+Cluster_refined_assigned_allcombined_sctV1  <- SetIdent(Cluster_refined_assigned_allcombined_sctV1, cells= WhichCells(Subcluster_assigned_allcombined_sct_spc, idents = "6"), "Goblet_precursor")
+
+##Visulization
+#combined UMAP
+p1 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1, reduction = "umap", group.by = "dataset")
+p2 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1, reduction = "umap", label = TRUE, repel = TRUE)
+p1 + p2
+p3 <- p1 + p2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1_UMAP_combined.jpg", height = 20, width = 25, plot = p3, quality = 50)
+
+#split by dataset
+p1 <- DimPlot(Cluster_refined_assigned_allcombined_sctV1, reduction = "umap", split.by = "dataset", label.size = 5, label = TRUE, ncol = 2)
+p1
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sctV1_UMAP_split.jpg", height = 40, width = 25, plot = p1, quality = 100)
+
+#split by condition
+p1x <- DimPlot(Cluster_refined_assigned_allcombined_sct, split.by = "condition", label.size = 5, label = TRUE, ncol = 2) 
+p1x
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Cluster_refined_assigned_allcombined_sct_UMAP_split_condition.jpg", height = 25, width = 25, plot = p1x, quality = 100)
+
+saveRDS(Cluster_refined_assigned_allcombined_sctV1, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1.rds")
+```
+
+```{r normalization and scaling RNA data for downstream analysis}
+##for entire Seurat object
+#lognNormalize/ScaleData on the RNA assay
+Cluster_refined_assigned_allcombined_sctV1Norm <- NormalizeData(
+  Cluster_refined_assigned_allcombined_sctV1,
+  assay = "RNA",
+  normalization.method = "LogNormalize",
+  scale.factor = 10000,
+  margin = 1,
+  verbose = TRUE,)
+
+saveRDS(Cluster_refined_assigned_allcombined_sctV1Norm, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1Norm.rds")
+
+#Scale data
+Cluster_refined_assigned_allcombined_sctV1NormScale <- ScaleData(Cluster_refined_assigned_allcombined_sctV1Norm, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Cluster_refined_assigned_allcombined_sctV1NormScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1NormScale.rds")
+
+###create normalized and scaled subsets for downstream analysis
+## create subset for secreotry progenitor
+Subcluster_refined_assigned_allcombined_sctV1Norm_sp <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("Secretory_progenitor"))
+# Scale data for secretory progenitor
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_sp, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_spScale.rds")
+
+## create subset for ISC_low_proliferative cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_lp <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("ISC_low_proliferative"))
+# Scale data for ISC_low_proliferative cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_ISC-lpScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_lp, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_ISC-lpScale.rds")
+
+## create subset for ISC_high_proliferative cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_hp <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("ISC_high_proliferative"))
+# Scale data for ISC_high_proliferative cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_hpScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_hp, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_hpScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_ISC_hpScale.rds")
+
+## create subset for Lgr5+ ISC (combined ISC)
+# subset ISC
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined <- subset(x = Cluster_refined_assigned_allcombined_sctV1Norm, idents = c("ISC_high_proliferative","ISC_low_proliferative"))
+
+saveRDS(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined.rds")
+
+# enrich Lgr5+ high expressing cells as Lgr5+ ISC
+DefaultAssay(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_) <- "RNA"
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched <- subset(x = Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined, subset = Lgr5 > 0)
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale <- ScaleData(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale.rds")
+
+## create subset for Goblet_precursor cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GP <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("Goblet_precursor"))
+
+# Scale data for Goblet_precursor cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_GP, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_GPScale.rds")
+
+## create subset for Goblet/Paneth_progenitor cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanP <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("Goblet/Paneth_progenitor"))
+
+# Scale data for Goblet/Paneth_progenitor cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanP, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale.rds")
+
+## create subset for Goblet/Paneth cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("Goblet/Paneth"))
+
+# Scale data for Goblet/Paneth cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPanPScale.rds")
+
+## create subset for enterocytes without specifying Clu
+Cluster_refined_assigned_allcombined_sctV1Norm_noClu <- RenameIdents(Cluster_refined_assigned_allcombined_sctV1Norm, `Clu+` = "Enterocyte")
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_Enterocyte <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm_noClu, idents = ("Enterocyte"))
+
+# Scale data for enterocytes without specifying Clu
+Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_Enterocyte, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_noClu_EnterocyteScale.rds")
+
+## create subset for enterocytes with Clu specified
+Subcluster_refined_assigned_allcombined_sctV1Norm_Enterocyte <- subset (x= Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("Enterocyte"))
+
+#Scale data for enterocytes with specifying Clu
+Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_Enterocyte, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale.rds")
+
+## create subset for Clu+ cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_Clu <- subset (x=Cluster_refined_assigned_allcombined_sctV1Norm, idents = ("Clu+"))
+
+#Scale data for Clu+ cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_CluScale <- ScaleData(Subcluster_refined_assigned_allcombined_sctV1Norm_Clu, assay = "RNA", vars.to.regress = c("nCount_RNA", "percent.mt"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_CluScale, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_CluScale.rds")
+```
+
+```{r tabulates}
+#subset by condition
+Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO1 <- subset (x= Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_DMSO1"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO1, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO1.rds")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO2 <- subset (x= Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_DMSO2"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO2, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO2.rds")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA1 <- subset (x= Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_EIPA1"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA1, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA1.rds")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA2 <- subset (x= Cluster_refined_assigned_allcombined_sctV1NormScale_forfigure, subset = (dataset == "filtered_WT_EIPA2"))
+
+saveRDS(Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA2, "F:/ISC scRNAseq data and analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA2.rds")
+
+
+table(Idents(Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO1))
+#                      TA         Goblet_precursor     Secretory_progenitor    Unkonwn_proliferative   ISC_high_proliferative 
+#                    5269                      549                       49                     1833                     1637 
+#    Enterocyte_premature Goblet/Paneth_progenitor                      EEC               Enterocyte    ISC_low_proliferative 
+#                    1523                      837                      495                      907                      821 
+#                    Clu+                     Tuft            Goblet/Paneth            EEC precursor 
+#                     141                      205                       89                       62 
+
+table(Idents(Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA1))
+#                      TA         Goblet_precursor     Secretory_progenitor    Unkonwn_proliferative 
+#                    4555                      497                       43                     2239 
+#ISC_high_proliferative     Enterocyte_premature      Goblet/Paneth_progenitor                   EEC 
+#                    1632                     1815                     1077                      720 
+#              Enterocyte    ISC_low_proliferative                     Clu+                     Tuft 
+#                    1261                      663                      418                      214 
+#           Goblet/Paneth            EEC precursor 
+#                      52                       71 
+table(Idents(Subcluster_refined_assigned_allcombined_sctV1Norm_DMSO2))
+#                      TA         Goblet_precursor     Secretory_progenitor    Unkonwn_proliferative 
+#                    7274                      937                       63                     3320 
+#  ISC_high_proliferative     Enterocyte_premature Goblet/Paneth_progenitor                      EEC 
+#                    2566                     1206                     1408                     1080 
+#              Enterocyte    ISC_low_proliferative                     Clu+                     Tuft 
+#                     707                     1105                      128                      456 
+#           Goblet/Paneth            EEC precursor 
+#                     145                      114 
+table(Idents(Subcluster_refined_assigned_allcombined_sctV1Norm_EIPA2))
+#                      TA         Goblet_precursor     Secretory_progenitor    Unkonwn_proliferative   ISC_high_proliferative 
+#                    4725                      661                       53                      234                     1712 
+#    Enterocyte_premature Goblet/Paneth_progenitor                      EEC               Enterocyte    ISC_low_proliferative 
+#                    1357                     1810                      633                     1259                      503 
+#                    Clu+                     Tuft            Goblet/Paneth            EEC precursor 
+#                     518                      261                      109                       70 
+```
+```{r subcluster for Paneth/Goblet}
+# PCA analysis
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca <- RunPCA(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan, verbose = FALSE)
+
+#determine dimension
+ElbowPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca, ndims = 30)
+
+# Find neighbors
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca) <- "integrated" 
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca <- RunPCA(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca, verbose = FALSE)
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca <- FindNeighbors(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca, dims = 1:30)
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca <- FindClusters(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca, resolution = 1.2)
+
+## Clustering with UMAP
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised <- RunUMAP(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_pca, dims = 1:30)
+
+saveRDS(Subcluster_assigned_allcombined_sct_spc, "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/Data/All combined/Seurat object/Subcluster_assigned_allcombined_sct_spc.rds")
+
+##visulize UMAP
+p1 <- DimPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, reduction = "umap", group.by = "dataset")
+p2 <- DimPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, reduction = "umap", label = TRUE, repel = TRUE)
+p1 + p2
+p3 <- p1 + p2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_assigned_allcombined_sct_spc_dimplot_Atoh.jpg", height = 12, width = 12, plot = p3, quality = 50)
+
+
+#Dotplot to visulize signature gene expression within the subcluster
+DefaultAssay(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised)
+pspsub <- DotPlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Muc2", "Clca3", "Tff3", "Agr2", "Klf4","Atoh1", "Gfi1", "Spdef"))
+pspsub
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_dotplot_Gobmarker.jpg", height = 30, width = 12, plot = pspsub, quality = 50)
+
+pspsub2 <- DotPlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4", "Mptx2", "Dll4", "Sox9", "Ephb3", "Mmp7","Dll1", "Atoh1", "Gfi1", "Spdef"))
+pspsub2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_dotplot_Panmarker.jpg", height = 30, width = 12, plot = pspsub2, quality = 50)
+pspsub+pspsub2
+
+#for comparison to demonstrate seperating Paneth and Goblet cells are not satisfied
+pspsuww <- DotPlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Muc2", "Tff3", "Agr2","Klf4"))
+
+pspsuwu <- DotPlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Lyz1", "Defa17", "Defa24","Mmp7"))
+xd <- pspsuww + pspsuwu
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_Dot_Panmarker.jpg", height = 5, width = 10, plot = xd, quality = 50)
+
+#Featureplot to visulize signature gene expression within the subcluster
+pspsubq <- FeaturePlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Muc2", "Clca3", "Tff3", "Agr2", "Klf4"), ncol = 4)
+pspsubq
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_feature_Gobmarker.jpg", height = 25, width = 12, plot = pspsubq, quality = 50)
+
+pspsubq2 <- FeaturePlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4", "Mptx2", "Dll4", "Sox9", "Ephb3", "Mmp7"), ncol = 4)
+pspsubq2
+ggsave(filename = "~/scRNAseq/ISC_scRNAseq_data_and_analysis/ISC share/Rstudio/IntestinalOrganoids/Results/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_feature_Panmarker.jpg", height = 25, width = 12, plot = pspsubq2, quality = 50)
+
+#for comparison to demonstrate seperating Paneth and Goblet cells are not satisfied
+pspsuww <- FeaturePlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Muc2", "Tff3"), ncol = 2)
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_feature_Gobmarker.jpg", height = 5, width = 12, plot = pspsuww, quality = 50)
+
+pspsuwu <- FeaturePlot(object = Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised, features = c("Lyz1", "Defa24"), ncol = 2)
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision/Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_revised_feature_Panmarker.jpg", height = 5, width = 12, plot = pspsuwu, quality = 50)
+```
+
+Session Info
+R version 4.1.3 (2022-03-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Monterey 12.4
+Matrix products: default
+LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+attached base packages:
+[1] stats     graphics
+[3] grDevices utils
+[5] datasets  methods
+[7] base
+other attached packages:
+[1] DECENT_1.1.1
+[2] readr_2.1.3
+[3] ggplot2_3.4.0
+[4] dplyr_1.0.10
+[5] patchwork_1.1.2
+[6] SeuratObject_4.1.3
+[7] Seurat_4.3.0
+loaded via a namespace (and not attached):
+  [1] VGAM_1.1-7
+  [2] Rtsne_0.16
+  [3] colorspace_2.0-3
+  [4] deldir_1.0-6
+  [5] ellipsis_0.3.2
+  [6] ggridges_0.5.4
+  [7] rstudioapi_0.14
+  [8] spatstat.data_3.0-0
+  [9] leiden_0.4.3
+ [10] listenv_0.9.0
+ [11] ggrepel_0.9.2
+ [12] fansi_1.0.3
+ [13] codetools_0.2-18
+ [14] splines_4.1.3
+ [15] doParallel_1.0.17
+ [16] knitr_1.41
+ [17] polyclip_1.10-4
+ [18] jsonlite_1.8.4
+ [19] ica_1.0-3
+ [20] cluster_2.1.4
+ [21] png_0.1-8
+ [22] uwot_0.1.14
+ [23] shiny_1.7.4
+ [24] sctransform_0.3.5
+ [25] spatstat.sparse_3.0-0
+ [26] compiler_4.1.3
+ [27] httr_1.4.4
+ [28] assertthat_0.2.1
+ [29] Matrix_1.5-1
+ [30] fastmap_1.1.0
+ [31] lazyeval_0.2.2
+ [32] limma_3.50.3
+ [33] cli_3.6.0
+ [34] later_1.3.0
+ [35] htmltools_0.5.4
+ [36] tools_4.1.3
+ [37] igraph_1.3.5
+ [38] gtable_0.3.1
+ [39] glue_1.6.2
+ [40] RANN_2.6.1
+ [41] reshape2_1.4.4
+ [42] Rcpp_1.0.9
+ [43] ZIM_1.1.0
+ [44] scattermore_0.8
+ [45] vctrs_0.5.1
+ [46] spatstat.explore_3.0-5
+ [47] nlme_3.1-161
+ [48] progressr_0.13.0
+ [49] iterators_1.0.14
+ [50] lmtest_0.9-40
+ [51] spatstat.random_3.0-1
+ [52] xfun_0.36
+ [53] stringr_1.5.0
+ [54] globals_0.16.2
+ [55] mime_0.12
+ [56] miniUI_0.1.1.1
+ [57] lifecycle_1.0.3
+ [58] irlba_2.3.5.1
+ [59] statmod_1.5.0
+ [60] goftest_1.2-3
+ [61] future_1.30.0
+ [62] edgeR_3.36.0
+ [63] MASS_7.3-58.1
+ [64] zoo_1.8-11
+ [65] scales_1.2.1
+ [66] hms_1.1.2
+ [67] promises_1.2.0.1
+ [68] spatstat.utils_3.0-1
+ [69] parallel_4.1.3
+ [70] RColorBrewer_1.1-3
+ [71] yaml_2.3.6
+ [72] reticulate_1.27
+ [73] pbapply_1.7-0
+ [74] gridExtra_2.3
+ [75] stringi_1.7.12
+ [76] foreach_1.5.2
+ [77] rlang_1.0.6
+ [78] pkgconfig_2.0.3
+ [79] matrixStats_0.63.0
+ [80] evaluate_0.19
+ [81] lattice_0.20-45
+ [82] ROCR_1.0-11
+ [83] purrr_0.3.4
+ [84] tensor_1.5
+ [85] htmlwidgets_1.6.1
+ [86] cowplot_1.1.1
+ [87] tidyselect_1.2.0
+ [88] parallelly_1.34.0
+ [89] RcppAnnoy_0.0.20
+ [90] plyr_1.8.8
+ [91] magrittr_2.0.3
+ [92] R6_2.5.1
+ [93] generics_0.1.3
+ [94] DBI_1.1.3
+ [95] pillar_1.8.1
+ [96] withr_2.5.0
+ [97] fitdistrplus_1.1-8
+ [98] survival_3.5-0
+ [99] abind_1.4-5
+[100] sp_1.5-1
+[101] tibble_3.1.8
+[102] future.apply_1.10.0
+[103] KernSmooth_2.23-20
+[104] utf8_1.2.2
+[105] spatstat.geom_3.0-3
+[106] plotly_4.10.1
+[107] tzdb_0.3.0
+[108] rmarkdown_2.19
+[109] locfit_1.5-9.7
+[110] grid_4.1.3
+[111] data.table_1.14.6
+[112] digest_0.6.31
+[113] xtable_1.8-4
+[114] tidyr_1.2.1
+[115] httpuv_1.6.8
+[116] stats4_4.1.3
+[117] munsell_0.5.0
+[118] viridisLite_0.4.1
