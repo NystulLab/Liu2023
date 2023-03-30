@@ -1,5 +1,5 @@
 ---
-title: "Liu.Y 2022 scRNA-seq gene exprssion and graph"
+title: "Liu.Y 2023 scRNA-seq gene exprssion and graph"
 output: html_notebook
 ---
 
@@ -747,143 +747,188 @@ write.csv(GobPanP_DECENT_Doxminusvsplus.table, "F:/ISC scRNAseq data and analysi
 
 ```
 
-Session Info
-R version 4.1.3 (2022-03-10)
-Platform: x86_64-apple-darwin17.0 (64-bit)
-Running under: macOS Monterey 12.4
-Matrix products: default
-LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
-locale:
-[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
-attached base packages:
-[1] stats     graphics
-[3] grDevices utils
-[5] datasets  methods
-[7] base
-other attached packages:
-[1] DECENT_1.1.1
-[2] readr_2.1.3
-[3] ggplot2_3.4.0
-[4] dplyr_1.0.10
-[5] patchwork_1.1.2
-[6] SeuratObject_4.1.3
-[7] Seurat_4.3.0
-loaded via a namespace (and not attached):
-  [1] VGAM_1.1-7
-  [2] Rtsne_0.16
-  [3] colorspace_2.0-3
-  [4] deldir_1.0-6
-  [5] ellipsis_0.3.2
-  [6] ggridges_0.5.4
-  [7] rstudioapi_0.14
-  [8] spatstat.data_3.0-0
-  [9] leiden_0.4.3
- [10] listenv_0.9.0
- [11] ggrepel_0.9.2
- [12] fansi_1.0.3
- [13] codetools_0.2-18
- [14] splines_4.1.3
- [15] doParallel_1.0.17
- [16] knitr_1.41
- [17] polyclip_1.10-4
- [18] jsonlite_1.8.4
- [19] ica_1.0-3
- [20] cluster_2.1.4
- [21] png_0.1-8
- [22] uwot_0.1.14
- [23] shiny_1.7.4
- [24] sctransform_0.3.5
- [25] spatstat.sparse_3.0-0
- [26] compiler_4.1.3
- [27] httr_1.4.4
- [28] assertthat_0.2.1
- [29] Matrix_1.5-1
- [30] fastmap_1.1.0
- [31] lazyeval_0.2.2
- [32] limma_3.50.3
- [33] cli_3.6.0
- [34] later_1.3.0
- [35] htmltools_0.5.4
- [36] tools_4.1.3
- [37] igraph_1.3.5
- [38] gtable_0.3.1
- [39] glue_1.6.2
- [40] RANN_2.6.1
- [41] reshape2_1.4.4
- [42] Rcpp_1.0.9
- [43] ZIM_1.1.0
- [44] scattermore_0.8
- [45] vctrs_0.5.1
- [46] spatstat.explore_3.0-5
- [47] nlme_3.1-161
- [48] progressr_0.13.0
- [49] iterators_1.0.14
- [50] lmtest_0.9-40
- [51] spatstat.random_3.0-1
- [52] xfun_0.36
- [53] stringr_1.5.0
- [54] globals_0.16.2
- [55] mime_0.12
- [56] miniUI_0.1.1.1
- [57] lifecycle_1.0.3
- [58] irlba_2.3.5.1
- [59] statmod_1.5.0
- [60] goftest_1.2-3
- [61] future_1.30.0
- [62] edgeR_3.36.0
- [63] MASS_7.3-58.1
- [64] zoo_1.8-11
- [65] scales_1.2.1
- [66] hms_1.1.2
- [67] promises_1.2.0.1
- [68] spatstat.utils_3.0-1
- [69] parallel_4.1.3
- [70] RColorBrewer_1.1-3
- [71] yaml_2.3.6
- [72] reticulate_1.27
- [73] pbapply_1.7-0
- [74] gridExtra_2.3
- [75] stringi_1.7.12
- [76] foreach_1.5.2
- [77] rlang_1.0.6
- [78] pkgconfig_2.0.3
- [79] matrixStats_0.63.0
- [80] evaluate_0.19
- [81] lattice_0.20-45
- [82] ROCR_1.0-11
- [83] purrr_0.3.4
- [84] tensor_1.5
- [85] htmlwidgets_1.6.1
- [86] cowplot_1.1.1
- [87] tidyselect_1.2.0
- [88] parallelly_1.34.0
- [89] RcppAnnoy_0.0.20
- [90] plyr_1.8.8
- [91] magrittr_2.0.3
- [92] R6_2.5.1
- [93] generics_0.1.3
- [94] DBI_1.1.3
- [95] pillar_1.8.1
- [96] withr_2.5.0
- [97] fitdistrplus_1.1-8
- [98] survival_3.5-0
- [99] abind_1.4-5
-[100] sp_1.5-1
-[101] tibble_3.1.8
-[102] future.apply_1.10.0
-[103] KernSmooth_2.23-20
-[104] utf8_1.2.2
-[105] spatstat.geom_3.0-3
-[106] plotly_4.10.1
-[107] tzdb_0.3.0
-[108] rmarkdown_2.19
-[109] locfit_1.5-9.7
-[110] grid_4.1.3
-[111] data.table_1.14.6
-[112] digest_0.6.31
-[113] xtable_1.8-4
-[114] tidyr_1.2.1
-[115] httpuv_1.6.8
-[116] stats4_4.1.3
-[117] munsell_0.5.0
-[118] viridisLite_0.4.1
+```{r DECENT analysis_EEC}
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EEC_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_EEC, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EEC_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_EEC, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+EEC_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EEC_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+EEC_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EEC_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+EEC_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = EEC_DECENT_DMOSvsEIPA)
+EEC_DECENT_Doxminusvsplus_matrix <- as.matrix(x = EEC_DECENT_Doxminusvsplus)
+
+EEC_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EEC_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+EEC_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EEC_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+EEC_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(EEC_condition_DECENT_DMSOvsEIPA)
+EEC_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(EEC_condition_DECENT_Doxminusvsplus)
+
+EEC_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = EEC_condition_DECENT_DMSOvsEIPA_transpose)
+EEC_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = EEC_condition_DECENT_Doxminusvsplus_transpose)
+
+EEC_DECENT_DMSOvsEIPA_combined <- list(EEC_DECENT_DMSOvsEIPA_matrix, EEC_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(EEC_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+EEC_DECENT_Doxminusvsplus_combined <- list(EEC_DECENT_Doxminusvsplus_matrix, EEC_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(EEC_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+EEC_DECENT_DMSOvsEIPA.table <- decent(EEC_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(EEC_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), parallel = T, n.cores = 15)
+write.csv(EEC_DECENT_DMSOvsEIPA.table, "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/EEC_DECENT_DMSOvsEIPA.csv")
+EEC_DECENT_Doxminusvsplus.table <- decent(EEC_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(EEC_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(EEC_DECENT_Doxminusvsplus.table, "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/EEC_DECENT_Doxminusvsplus.csv")
+
+```
+```{r DECENT analysis_EEC precursor}
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EECp_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_EECp, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EECp_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_EECp, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+EECp_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EECp_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+EECp_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EECp_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+EECp_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = EECp_DECENT_DMOSvsEIPA)
+EECp_DECENT_Doxminusvsplus_matrix <- as.matrix(x = EECp_DECENT_Doxminusvsplus)
+
+EECp_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EECp_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+EECp_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_EECp_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+EECp_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(EECp_condition_DECENT_DMSOvsEIPA)
+EECp_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(EECp_condition_DECENT_Doxminusvsplus)
+
+EECp_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = EECp_condition_DECENT_DMSOvsEIPA_transpose)
+EECp_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = EECp_condition_DECENT_Doxminusvsplus_transpose)
+
+EECp_DECENT_DMSOvsEIPA_combined <- list(EECp_DECENT_DMSOvsEIPA_matrix, EECp_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(EECp_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+EECp_DECENT_Doxminusvsplus_combined <- list(EECp_DECENT_Doxminusvsplus_matrix, EECp_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(EECp_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+EECp_DECENT_DMSOvsEIPA.table <- decent(EECp_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(EECp_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), parallel = T)
+write.csv(EECp_DECENT_DMSOvsEIPA.table, "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/EECp_DECENT_DMSOvsEIPA.csv")
+EECp_DECENT_Doxminusvsplus.table <- decent(EECp_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(EECp_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(EECp_DECENT_Doxminusvsplus.table, "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/EECp_DECENT_Doxminusvsplus.csv")
+
+```
+```{r DECENT analysis_Tuft}
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft_DECENT_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft_DECENT_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+Tuft_DECENT_DMOSvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft_DECENT_DMSOvsEIPA@assays[["RNA"]]@counts)
+Tuft_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft_DECENT_Doxminusvsplus@assays[["RNA"]]@counts)
+Tuft_DECENT_DMSOvsEIPA_matrix <- as.matrix(x = Tuft_DECENT_DMOSvsEIPA)
+Tuft_DECENT_Doxminusvsplus_matrix <- as.matrix(x = Tuft_DECENT_Doxminusvsplus)
+
+Tuft_condition_DECENT_DMSOvsEIPA <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft_DECENT_DMSOvsEIPA@meta.data[["condition"]], row.names = NULL)
+Tuft_condition_DECENT_Doxminusvsplus <- data.frame(Subcluster_refined_assigned_allcombined_sctV1Norm_Tuft_DECENT_Doxminusvsplus@meta.data[["condition"]], row.names = NULL)
+
+Tuft_condition_DECENT_DMSOvsEIPA_transpose <- t.data.frame(Tuft_condition_DECENT_DMSOvsEIPA)
+Tuft_condition_DECENT_Doxminusvsplus_transpose <- t.data.frame(Tuft_condition_DECENT_Doxminusvsplus)
+
+Tuft_condition_DECENT_DMSOvsEIPA_transpose_matrix <- as.matrix(x = Tuft_condition_DECENT_DMSOvsEIPA_transpose)
+Tuft_condition_DECENT_Doxminusvsplus_transpose_matrix <- as.matrix(x = Tuft_condition_DECENT_Doxminusvsplus_transpose)
+
+Tuft_DECENT_DMSOvsEIPA_combined <- list(Tuft_DECENT_DMSOvsEIPA_matrix, Tuft_condition_DECENT_DMSOvsEIPA_transpose_matrix)
+names(Tuft_DECENT_DMSOvsEIPA_combined) <- c("data.obs", "cell.type")
+Tuft_DECENT_Doxminusvsplus_combined <- list(Tuft_DECENT_Doxminusvsplus_matrix, Tuft_condition_DECENT_Doxminusvsplus_transpose_matrix)
+names(Tuft_DECENT_Doxminusvsplus_combined) <- c("data.obs", "cell.type")
+
+Tuft_DECENT_DMSOvsEIPA.table <- decent(Tuft_DECENT_DMSOvsEIPA_combined$data.obs, X = ~as.factor(Tuft_DECENT_DMSOvsEIPA_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1), parallel = T)
+write.csv(Tuft_DECENT_DMSOvsEIPA.table, "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/Tuft_DECENT_DMSOvsEIPA.csv")
+Tuft_DECENT_Doxminusvsplus.table <- decent(Tuft_DECENT_Doxminusvsplus_combined$data.obs, X = ~as.factor(Tuft_DECENT_Doxminusvsplus_combined$cell.type),W = NULL, use.spikes = F, CE.rang = c(0.02, 0.1))
+write.csv(Tuft_DECENT_Doxminusvsplus.table, "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/statistics/Tuft_DECENT_Doxminusvsplus.csv")
+
+```
+
+```{r gene expression changes per cell cluster, per condition}
+#ISC
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DMSOvsEIPA <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_Doxminusvsplus <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+dlg <- VlnPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_DMSOvsEIPA, features = c("Fos","Atf3","Apoa1","Jun","Hbegf","Klf6","Fosb","Txnip","Pdgfa","Edn1"), assay = "RNA", group.by = "condition", ncol = 10)
+dlg
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/combined ISC_DMSOvsEIPA_RNA_DGEtop10.jpg", height = 3, width = 16, plot = dlg, quality = 100)
+
+
+dlg2 <- VlnPlot(Cluster_refined_assigned_allcombined_sctV1Norm_ISCcombined_Lgr5enriched_Scale_Doxminusvsplus, features = c("Ang4","Lyz1","Defa17","Defa24","Apoa1","Guca2b","Fos","Mmp7","Defa30","Dmbt1"), assay = "RNA", group.by = "condition", ncol = 10)
+dlg2
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/combined ISC_Doxminusvsplus_RNA_DGEtop10.jpg", height = 3.5, width = 16, plot = dlg2, quality = 100)
+
+#secretory progenitor
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_spScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+ftu <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_DMSOvsEIPA, features = c("Fos","Atf3","Apoa1","Jun","Hbegf","Klf6","Fosb","Txnip","Pdgfa","Edn1"), assay = "RNA", group.by = "condition", ncol = 10)
+ftu
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/sp_DMSOvsEIPA_RNA_DGEtop10.jpg", height = 3, width = 16, plot = ftu, quality = 100)
+
+
+ftu2 <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_spScale_Doxminusvsplus, features = c("Ang4","Lyz1","Defa17","Defa24","Apoa1","Guca2b","Fos","Mmp7","Defa30","Dmbt1"), assay = "RNA", group.by = "condition", ncol = 10)
+ftu2
+ggsave(filename = "/Volumes/Yi ExPro/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/sp_Doxminusvsplus_RNA_DGEtop10.jpg", height = 3.5, width = 16, plot = ftu2, quality = 100)
+
+#EEC
+Subcluster_refined_assigned_allcombined_sctV1Norm_EECScale_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_EECScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EECScale_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_EECScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+djg <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_EECScale_DMSOvsEIPA, features = c("Apoa1","Atf3","Gm49980","Apoc2","Apoa4","Fosb","Apoc3","Fos","Hbegf","Defa22"), assay = "RNA", group.by = "condition", ncol = 10)
+djg
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/EEC_DMSOvsEIPA_RNA_DGEtop10.jpg", height = 3, width = 16, plot = djg, quality = 100)
+
+
+djg2 <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_EECScale_Doxminusvsplus, features = c("Defa17","Apoa1","Eno1","Defa30","Gstm5","Lyz1","Pgk1","Bnip3","Prelid2","Defa24"), assay = "RNA", group.by = "condition", ncol = 10)
+djg2
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/EEC_Doxminusvsplus_RNA_DGEtop10.jpg", height = 3.5, width = 16, plot = djg2, quality = 100)
+
+#Goblet and Paneth cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+ksi <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale_DMSOvsEIPA, features = c("Apoa1","Guca2b","Hnrnpa1","Apoc3","Mt4","AY036118","Snu13","Guca2a","Edn1","Mmp7"), assay = "RNA", group.by = "condition", ncol = 10)
+ksi
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/GobPan_DMSOvsEIPA_RNA_DGEtop10.jpg", height = 3, width = 16, plot = ksi, quality = 100)
+
+
+ksi2 <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_GobPan_Scale_Doxminusvsplus, features = c("Apoa1","Lgals2","Dmbt1","2610528A11Rik","Sis","Ang4","Gm10076","Muc13","Gm49980","Hspd1"), assay = "RNA", group.by = "condition", ncol = 10)
+ksi2
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/GobPan_Doxminusvsplus_RNA_DGEtop10.jpg", height = 3.5, width = 16, plot = ksi2, quality = 100)
+
+#Tuft cells
+Subcluster_refined_assigned_allcombined_sctV1Norm_TuftScale_DMSOvsEIPA <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_TuftScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_TuftScale_Doxminusvsplus <- subset (Subcluster_refined_assigned_allcombined_sctV1Norm_TuftScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+gud <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_TuftScale_DMSOvsEIPA, features = c("Apoa1","Fos","Atf3","Jun","Gsta1","Ghrl","Defa30","Gm49980","Klf6","Apoc2"), assay = "RNA", group.by = "condition", ncol = 10)
+gud
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/Tuft_DMSOvsEIPA_RNA_DGEtop10.jpg", height = 3, width = 16, plot = gud, quality = 100)
+
+gud2 <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_TuftScale_Doxminusvsplus, features = c("Defa17","Eno1","Defa24","Lyz1","Itln1","Pgk1","Defa30","Aldoa","Pfkl","Dtd2"), assay = "RNA", group.by = "condition", ncol = 10)
+gud2
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/Tuft_Doxminusvsplus_RNA_DGEtop10.jpg", height = 3.5, width = 16, plot = gud2, quality = 100)
+
+#Enterocytes
+Subcluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale_DMSOvsEIPA <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale, subset = condition =="WT_DMSO" | condition =="WT_EIPA")
+
+Subcluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale_Doxminusvsplus <- subset (Cluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale, subset = condition =="CRISPR_Dox_minus" | condition =="CRISPR_Dox_plus")
+
+hei <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale_DMSOvsEIPA, features = c("Gpx4","Cox8a","Fos","Gm43305","Guca2a","Mt1","Egr1","Mt4","Jun","Gda"), assay = "RNA", group.by = "condition", ncol = 10)
+hei
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/Enterocyte_DMSOvsEIPA_RNA_DGEtop10.jpg", height = 3, width = 16, plot = hei, quality = 100)
+
+
+hei2 <- VlnPlot(Subcluster_refined_assigned_allcombined_sctV1Norm_EnterocyteScale_Doxminusvsplus, features = c("Atp5j2","mt-Atp6","Fos","Ang4","5430427M07Rik","Fgfbp1","Rbp7","Gda","Dmbt1","mt-Co2"), assay = "RNA", group.by = "condition", ncol = 10)
+hei2
+ggsave(filename = "/Volumes/WD_BLACK/ISC scRNAseq data and analysis/ISC share/Rstudio/IntestinalOrganoids/Results/allcombined UMAPD45R0.8n4000/Figure revision 2nd round/Enterocyte_Doxminusvsplus_RNA_DGEtop10.jpg", height = 3.5, width = 16, plot = hei2, quality = 100)
+```
+\`\`\`
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
